@@ -71,7 +71,8 @@ class _StatsPageState extends State<StatsPage> {
         totalScore += throws.fold(0, (a, b) => a + (b as int));
         final avg = throws.isNotEmpty ? throws.fold(0, (a, b) => a + (b as int)) / throws.length : 0;
         if (bestAverage == null || avg > bestAverage) bestAverage = avg as double?;
-        final mode = g.containsKey('gameMode') ? g['gameMode'] : ((g['scores'] as List)[idx]);
+        // Use only 'gameMode' for determining mode. If missing, set to 'unknown'.
+        final mode = g.containsKey('gameMode') ? g['gameMode'] : 'unknown';
         modeCount[mode] = (modeCount[mode] ?? 0) + 1;
         lastDate = g['timestamp'];
         filteredGames.add(g);

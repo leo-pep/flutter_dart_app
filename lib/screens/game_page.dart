@@ -130,7 +130,7 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF23272F).withOpacity(0.85) : Colors.white.withOpacity(0.7);
+    final cardBg = isDark ? const Color(0xFF23272F).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.7);
     final cardText = isDark ? Colors.white : Colors.black;
     final size = MediaQuery.of(context).size;
     final numpadHeight = size.height / 3;
@@ -331,7 +331,7 @@ class _GamePageState extends State<GamePage> {
                 boxShadow: [
                   if (isCurrent)
                     BoxShadow(
-                      color: Colors.green.withOpacity(0.2),
+                      color: Colors.green.withValues(alpha: 0.2),
                       blurRadius: 16,
                       offset: Offset(0, 4),
                     ),
@@ -362,7 +362,7 @@ class _GamePageState extends State<GamePage> {
                 subtitle: Text(
                   'Avg: $avg',
                   style: GoogleFonts.montserrat(
-                    color: isCurrent ? Colors.white70 : cardText.withOpacity(0.7),
+                    color: isCurrent ? Colors.white70 : cardText.withValues(alpha: 0.7),
                     fontSize: 16,
                   ),
                 ),

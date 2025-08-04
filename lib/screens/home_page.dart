@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage> {
                     child: Card(
                       elevation: 4,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F).withOpacity(0.85) : Colors.white.withOpacity(0.7),
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.7),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: colorScheme.primaryContainer,

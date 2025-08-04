@@ -88,7 +88,8 @@ class _GamePageState extends State<GamePage> {
     stats.add({
       'winner': winner,
       'players': widget.players,
-      'scores': scores,
+      'gameMode': widget.startingScore, // Use this for now
+      'finalScores': List.from(scores),
       'history': history,
       'timestamp': DateTime.now().toIso8601String(),
     });

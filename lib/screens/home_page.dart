@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'game_page.dart';
+import 'stats_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -8,31 +10,56 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<String> players = [];
+  List<String> allPlayers = [];
+  List<String> selectedPlayers = [];
   final TextEditingController _controller = TextEditingController();
   int selectedStartingScore = 301;
   final List<int> possibleModes = [101, 201, 301, 501, 701, 901];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadPlayers();
+  }
+
+  Future<void> _loadPlayers() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      allPlayers = prefs.getStringList('all_players') ?? [];
+    });
+  }
+
+  Future<void> _savePlayers() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('all_players', allPlayers);
+  }
+
   void _addPlayer(String name) {
-    if (name.isNotEmpty && !players.contains(name)) {
+    if (name.isNotEmpty && !allPlayers.contains(name)) {
       setState(() {
-        players.add(name);
+        allPlayers.add(name);
+        selectedPlayers.add(name);
+      });
+      _savePlayers();
+    } else if (name.isNotEmpty && !selectedPlayers.contains(name)) {
+      setState(() {
+        selectedPlayers.add(name);
       });
     }
   }
 
   void _removePlayer(String name) {
     setState(() {
-      players.remove(name);
+      selectedPlayers.remove(name);
     });
   }
 
   void _startGame() {
-    if (players.isNotEmpty) {
+    if (selectedPlayers.isNotEmpty) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => GamePage(players: players, startingScore: selectedStartingScore),
+          builder: (_) => GamePage(players: selectedPlayers, startingScore: selectedStartingScore),
         ),
       );
     }
@@ -102,6 +129,18 @@ class _HomePageState extends State<HomePage> {
         title: Text('Dart Scoreboard'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.bar_chart),
+            tooltip: 'Player Stats',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => StatsPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
@@ -132,17 +171,55 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 24),
             Expanded(
-              child: players.isEmpty
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Select Players:', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: allPlayers.length,
+                      itemBuilder: (context, index) {
+                        final p = allPlayers[index];
+                        final selected = selectedPlayers.contains(p);
+                        return CheckboxListTile(
+                          value: selected,
+                          title: Text(p, style: GoogleFonts.montserrat(fontSize: 18)),
+                          onChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                if (!selectedPlayers.contains(p)) selectedPlayers.add(p);
+                              } else {
+                                selectedPlayers.remove(p);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  if (allPlayers.isEmpty)
+                    Center(
+                      child: Text(
+                        'No players yet. Add one!',
+                        style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: selectedPlayers.isEmpty
                   ? Center(
                 child: Text(
-                  'No players yet. Add one!',
+                  'No players selected.',
                   style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
                 ),
               )
                   : ListView.builder(
-                itemCount: players.length,
+                itemCount: selectedPlayers.length,
                 itemBuilder: (context, index) {
-                  final p = players[index];
+                  final p = selectedPlayers[index];
                   return AnimatedContainer(
                     duration: Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
@@ -199,4 +276,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

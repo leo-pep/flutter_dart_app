@@ -7,6 +7,8 @@ void main() {
 }
 
 class DartScoreboardApp extends StatelessWidget {
+  const DartScoreboardApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -31,7 +33,7 @@ class DartScoreboardApp extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           elevation: 4,
           margin: EdgeInsets.symmetric(vertical: 10, horizontal: 0),
-          color: Colors.white.withOpacity(0.7),
+          color: Colors.white.withValues(alpha: 0.7),
           shadowColor: Colors.black12,
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -53,7 +55,7 @@ class DartScoreboardApp extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           elevation: 4,
           margin: EdgeInsets.symmetric(vertical: 10, horizontal: 0),
-          color: const Color(0xFF23272F).withOpacity(0.85),
+          color: const Color(0xFF23272F).withValues(alpha: 0.85),
           shadowColor: Colors.black54,
         ),
         inputDecorationTheme: InputDecorationTheme(

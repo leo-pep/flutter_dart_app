@@ -7,7 +7,7 @@ class GamePage extends StatefulWidget {
   final List<String> players;
   final int startingScore;
 
-  GamePage({required this.players, required this.startingScore});
+  const GamePage({super.key, required this.players, required this.startingScore});
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -423,7 +423,7 @@ class _GamePageState extends State<GamePage> {
               ),
             ),
           ),
-          Container(
+          SizedBox(
             height: numpadHeight,
             child: buildNumpadAndButtons(),
           ),

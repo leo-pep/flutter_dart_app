@@ -145,7 +145,7 @@ class _StatsPageState extends State<StatsPage> {
         if (now.difference(dt).inDays < days) shouldRemove = true;
       }
       if (mode != null) {
-        final gameMode = g.containsKey('startingScore') ? g['startingScore'] : null;
+        final gameMode = g.containsKey('gameMode') ? g['gameMode'] : (g.containsKey('startingScore') ? g['startingScore'] : null);
         if (gameMode != null && gameMode == mode) shouldRemove = true;
       }
       if (days == null && mode == null) shouldRemove = true; // global reset

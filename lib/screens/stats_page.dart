@@ -234,7 +234,15 @@ class _StatsPageState extends State<StatsPage> {
 
   @override
   Widget build(BuildContext context) {
-    int crossAxisCount = MediaQuery.of(context).size.width > 900 ? 3 : MediaQuery.of(context).size.width > 600 ? 2 : 1;
+    int crossAxisCount;
+    double width = MediaQuery.of(context).size.width;
+    if (width > 900) {
+      crossAxisCount = 3;
+    } else if (width > 600) {
+      crossAxisCount = 2;
+    } else {
+      crossAxisCount = 1;
+    }
     return Scaffold(
       appBar: AppBar(title: Text('Player Stats')),
       body: Padding(

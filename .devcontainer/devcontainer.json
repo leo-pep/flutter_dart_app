@@ -1,0 +1,71 @@
+{
+	"name": "Flutter Development",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
+	
+	// Features to add to the dev container
+	"features": {},
+	
+	// Use 'forwardPorts' to make a list of ports inside the container available locally
+	"forwardPorts": [3000, 8080],
+	
+	// Configure tool-specific properties
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"Dart-Code.dart-code",
+				"Dart-Code.flutter",
+				"ms-vscode.vscode-json",
+				"formulahendry.auto-rename-tag",
+				"bradlc.vscode-tailwindcss",
+				"esbenp.prettier-vscode",
+				"mhutchie.git-graph"
+			],
+			"settings": {
+				"dart.flutterSdkPath": "/opt/flutter",
+				"dart.sdkPath": "/opt/flutter/bin/cache/dart-sdk",
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"editor.formatOnSave": true,
+				"editor.codeActionsOnSave": {
+					"source.fixAll": "explicit",
+					"source.organizeImports": "explicit"
+				},
+				"dart.debugExternalPackageLibraries": false,
+				"dart.debugSdkLibraries": false,
+				"flutter.checkForSdkUpdates": false
+			}
+		}
+	},
+	
+	// Connect as non-root user
+	"remoteUser": "developer",
+	
+	// Use 'postCreateCommand' to run commands after the container is created
+	"postCreateCommand": "flutter doctor && flutter pub get",
+	
+	// Use 'postStartCommand' to run commands after the container starts
+	"postStartCommand": "",
+	
+	// Environment variables
+	"containerEnv": {
+		"FLUTTER_HOME": "/opt/flutter",
+		"ANDROID_HOME": "/opt/android-sdk",
+		"ANDROID_SDK_ROOT": "/opt/android-sdk",
+		"JAVA_HOME": "/usr/lib/jvm/java-11-openjdk-amd64"
+	},
+	
+	// Mounts
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+		"source=/dev,target=/dev,type=bind",
+		"source=/sys/bus/usb,target=/sys/bus/usb,type=bind"
+	],
+	
+	// Run arguments
+	"runArgs": [
+		"--privileged",
+		"--device-cgroup-rule=c 189:* rmw"
+	]
+}

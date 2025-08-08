@@ -9,16 +9,28 @@ ENV ANDROID_HOME="/opt/android-sdk"
 ENV ANDROID_SDK_ROOT="$ANDROID_HOME"
 ENV PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 
-# Install system dependencies
+# Install basic utilities
 RUN apt-get update && apt-get install -y \
     curl \
     git \
     unzip \
     xz-utils \
     zip \
-    libglu1-mesa \
-    openjdk-11-jdk \
     wget \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Flutter and Android dependencies
+RUN apt-get update && apt-get install -y \
+    libglu1-mesa \
+    openjdk-17-jdk \
+    usbutils \
+    android-tools-adb \
+    android-tools-fastboot \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Linux desktop build dependencies
+RUN apt-get update && apt-get install -y \
     clang \
     cmake \
     ninja-build \
@@ -26,14 +38,10 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-dev \
     liblzma-dev \
     libstdc++6 \
-    usbutils \
-    android-tools-adb \
-    android-tools-fastboot \
-    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # Set JAVA_HOME
-ENV JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
+ENV JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 
 # Download and install Flutter
 RUN git clone https://github.com/flutter/flutter.git -b stable $FLUTTER_HOME

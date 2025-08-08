@@ -53,7 +53,7 @@
 		"FLUTTER_HOME": "/opt/flutter",
 		"ANDROID_HOME": "/opt/android-sdk",
 		"ANDROID_SDK_ROOT": "/opt/android-sdk",
-		"JAVA_HOME": "/usr/lib/jvm/java-11-openjdk-amd64"
+		"JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
 	},
 	
 	// Mounts

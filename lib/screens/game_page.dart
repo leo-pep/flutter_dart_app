@@ -6,8 +6,9 @@ import 'dart:convert';
 class GamePage extends StatefulWidget {
   final List<String> players;
   final int startingScore;
+  final String gameMode;
 
-  const GamePage({super.key, required this.players, required this.startingScore});
+  const GamePage({super.key, required this.players, required this.startingScore, required this.gameMode});
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -19,11 +20,36 @@ class _GamePageState extends State<GamePage> {
   int currentPlayer = 0;
   final TextEditingController _scoreController = TextEditingController();
 
+  // --- Gamemode-specific state ---
+  List<String> cricketTargets = ['15', '16', '17', '18', '19', '20', 'Bull', 'DBull'];
+  Map<String, List<int>> cricketHits = {};
+  List<int> cricketPoints = [];
+  List<List<Map<String, dynamic>>> turnHistory = [];
+  int shangaiRound = 1;
+  List<List<Map<String, dynamic>>> shangaiTurns = [];
+  int aroundTarget = 1;
+  List<List<int>> aroundHits = [];
+  int dartsLeft = 3;
+  List<Map<String, dynamic>> currentTurn = [];
+  late List<int> aroundTargets; // Each player's current target
+
   @override
   void initState() {
     super.initState();
     scores = List.filled(widget.players.length, widget.startingScore);
     history = List.generate(widget.players.length, (_) => []);
+    if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') {
+      cricketHits = {for (var t in cricketTargets) t: List.filled(widget.players.length, 0)};
+      cricketPoints = List.filled(widget.players.length, 0);
+      turnHistory = List.generate(widget.players.length, (_) => []);
+    }
+    if (widget.gameMode == 'Shangai') {
+      shangaiTurns = List.generate(widget.players.length, (_) => []);
+    }
+    if (widget.gameMode == 'AroundClock') {
+      aroundHits = List.generate(widget.players.length, (_) => []);
+      aroundTargets = List.filled(widget.players.length, 1); // Start each player at 1
+    }
   }
 
   double _average(int index) {
@@ -127,6 +153,602 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
+  Widget buildCricketTable() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Cricket Progress', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: [
+                  DataColumn(label: Text('Player', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                  ...cricketTargets.map((t) => DataColumn(label: Text(t, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)))),
+                  DataColumn(label: Text('Points', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                ],
+                rows: [
+                  for (int i = 0; i < widget.players.length; i++)
+                    DataRow(cells: [
+                      DataCell(Text(widget.players[i], style: GoogleFonts.montserrat())),
+                      ...cricketTargets.map((t) {
+                        int hits = cricketHits[t]?[i] ?? 0;
+                        return DataCell(Container(
+                          alignment: Alignment.center,
+                          child: Text('$hits', style: GoogleFonts.montserrat(fontWeight: hits == 3 ? FontWeight.bold : FontWeight.normal, color: hits == 3 ? Colors.green : Colors.black)),
+                        ));
+                      }),
+                      DataCell(Text('${cricketPoints[i]}', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                    ]),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildShangaiTable() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Shangai Progress', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
+            DataTable(
+              columns: [
+                DataColumn(label: Text('Player', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Score', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Shangai', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+              ],
+              rows: [
+                for (int i = 0; i < widget.players.length; i++)
+                  DataRow(cells: [
+                    DataCell(Text(widget.players[i], style: GoogleFonts.montserrat())),
+                    DataCell(Text(
+                      shangaiTurns[i].fold<int>(0, (a, b) => a + ((b['score'] ?? 0) as int)).toString(),
+                      style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                    )),
+                    DataCell(Text(
+                      shangaiTurns[i].any((b) => b['shangai'] == true) ? '✔' : '',
+                      style: GoogleFonts.montserrat(color: Colors.green, fontWeight: FontWeight.bold),
+                    )),
+                  ]),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildAroundClockTable() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Around the Clock Progress', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
+            DataTable(
+              columns: [
+                DataColumn(label: Text('Player', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Current Target', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Hits', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+              ],
+              rows: [
+                for (int i = 0; i < widget.players.length; i++)
+                  DataRow(cells: [
+                    DataCell(Text(widget.players[i], style: GoogleFonts.montserrat())),
+                    DataCell(Text(
+                      _targetLabel(aroundTargets[i]),
+                      style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                    )),
+                    DataCell(Text(
+                      aroundHits[i].length.toString(),
+                      style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                    )),
+                  ]),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _targetLabel(int target) {
+    if (target <= 20) return target.toString();
+    if (target == 21) return 'Bull';
+    if (target == 22) return 'DBull';
+    return 'Done';
+  }
+
+  Widget buildInputUI() {
+    if (widget.gameMode == 'X01') {
+      return buildNumpadAndButtons();
+    }
+    if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') {
+      // Cricket input: 15-20, Bull, DBull, Miss, multiple clicks, cancel
+      List<String> buttons = [...cricketTargets, 'Miss'];
+      return Column(
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: buttons.map((b) => ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  currentTurn.add({'target': b, 'mult': 1});
+                });
+              },
+              child: Text(b, style: GoogleFonts.montserrat(fontSize: 20)),
+            )).toList(),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                icon: Icon(Icons.undo),
+                label: Text('Cancel Last'),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  setState(() {
+                    currentTurn.removeLast();
+                  });
+                } : null,
+              ),
+              SizedBox(width: 16),
+              ElevatedButton.icon(
+                icon: Icon(Icons.check),
+                label: Text('End Turn'),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  // Apply turn
+                  for (var dart in currentTurn) {
+                    String t = dart['target'];
+                    if (t == 'Miss') continue;
+                    int mult = dart['mult'] ?? 1;
+                    if (cricketHits[t] != null) {
+                      int before = cricketHits[t]![currentPlayer];
+                      int after = before + mult;
+                      int extra = after > 3 ? after - 3 : 0;
+                      cricketHits[t]![currentPlayer] = after > 3 ? 3 : after;
+                      if (extra > 0) {
+                        int others = 0;
+                        for (int i = 0; i < widget.players.length; i++) {
+                          if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) others++;
+                        }
+                        if (others > 0) {
+                          int points = (t == 'Bull' ? 25 : t == 'DBull' ? 50 : int.tryParse(t) ?? 0) * extra;
+                          if (widget.gameMode == 'Cricket') {
+                            cricketPoints[currentPlayer] += points;
+                          } else {
+                            // CutThroat: add points to opponents who haven't closed
+                            for (int i = 0; i < widget.players.length; i++) {
+                              if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) cricketPoints[i] += points;
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  turnHistory[currentPlayer].add({'turn': List.from(currentTurn)});
+                  currentTurn.clear();
+                  // Check win
+                  bool allClosed = cricketTargets.every((t) => (cricketHits[t]?[currentPlayer] ?? 0) == 3);
+                  bool win = false;
+                  if (allClosed) {
+                    if (widget.gameMode == 'Cricket') {
+                      win = cricketPoints[currentPlayer] > cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a > b ? a : b);
+                    } else {
+                      win = cricketPoints[currentPlayer] < cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a < b ? a : b);
+                    }
+                  }
+                  if (win) {
+                    _showWinnerDialog(widget.players[currentPlayer]);
+                  } else {
+                    setState(() {
+                      currentPlayer = (currentPlayer + 1) % widget.players.length;
+                    });
+                  }
+                } : null,
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text('Current turn: ${currentTurn.map((d) => d['target']).join(', ')}'),
+        ],
+      );
+    }
+    if (widget.gameMode == 'Shangai') {
+      // Shangai input: S/D/T<target>, Shangai, Miss
+      String target = shangaiRound.toString();
+      List<String> buttons = ['S$target', 'D$target', 'T$target', 'Shangai', 'Miss'];
+      return Column(
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: buttons.map((b) => ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  currentTurn.add({'type': b});
+                });
+              },
+              child: Text(b, style: GoogleFonts.montserrat(fontSize: 20)),
+            )).toList(),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                icon: Icon(Icons.undo),
+                label: Text('Cancel Last'),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  setState(() {
+                    currentTurn.removeLast();
+                  });
+                } : null,
+              ),
+              SizedBox(width: 16),
+              ElevatedButton.icon(
+                icon: Icon(Icons.check),
+                label: Text('End Turn'),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  // Apply turn
+                  int score = 0;
+                  bool shangai = false;
+                  bool s = false, d = false, t = false;
+                  for (var dart in currentTurn) {
+                    String type = dart['type'];
+                    if (type == 'Miss') continue;
+                    if (type == 'Shangai') {
+                      shangai = true;
+                      s = d = t = true;
+                      score = 3 * shangaiRound + 2 * shangaiRound + shangaiRound;
+                      break;
+                    }
+                    if (type.startsWith('S')) { score += shangaiRound; s = true; }
+                    if (type.startsWith('D')) { score += 2 * shangaiRound; d = true; }
+                    if (type.startsWith('T')) { score += 3 * shangaiRound; t = true; }
+                  }
+                  shangaiTurns[currentPlayer].add({'turn': List.from(currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
+                  currentTurn.clear();
+                  // Check win
+                  if (shangai || (s && d && t)) {
+                    _showWinnerDialog(widget.players[currentPlayer]);
+                  } else {
+                    // Next round or next player
+                    if (currentPlayer == widget.players.length - 1) {
+                      if (shangaiRound == 7) {
+                        // End game, highest score wins
+                        int maxScore = 0, winner = 0;
+                        for (int i = 0; i < widget.players.length; i++) {
+                          int total = shangaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
+                          if (total > maxScore) { maxScore = total; winner = i; }
+                        }
+                        _showWinnerDialog(widget.players[winner]);
+                      } else {
+                        setState(() {
+                          shangaiRound++;
+                          currentPlayer = 0;
+                        });
+                      }
+                    } else {
+                      setState(() {
+                        currentPlayer++;
+                      });
+                    }
+                  }
+                } : null,
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text('Current turn: ${currentTurn.map((d) => d['type']).join(', ')}'),
+        ],
+      );
+    }
+    if (widget.gameMode == 'AroundClock') {
+      // Around the clock input: <target> or Miss, continue to next target if darts remain
+      int playerTarget = aroundTargets[currentPlayer];
+      String targetLabel = _targetLabel(playerTarget);
+      List<String> buttons = [targetLabel, 'Miss'];
+      return Column(
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: buttons.map((b) => ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  currentTurn.add({'target': b});
+                  dartsLeft--;
+                  if (b == targetLabel) {
+                    aroundHits[currentPlayer].add(playerTarget);
+                    aroundTargets[currentPlayer]++;
+                    if (aroundTargets[currentPlayer] > 22) aroundTargets[currentPlayer] = 22; // DBull is last
+                  }
+                  // End turn after 3 darts or if player finished
+                  if (dartsLeft == 0 || aroundTargets[currentPlayer] > 22) {
+                    // Check win condition
+                    if (aroundTargets[currentPlayer] > 22) {
+                      _showWinnerDialog(widget.players[currentPlayer]);
+                      return;
+                    }
+                    // Next player turn
+                    currentTurn.clear();
+                    dartsLeft = 3;
+                    currentPlayer = (currentPlayer + 1) % widget.players.length;
+                  }
+                });
+              },
+              child: Text(b),
+            )).toList(),
+          ),
+          SizedBox(height: 8),
+          Text('Current turn: ${currentTurn.map((d) => d['target']).join(', ')}'),
+        ],
+      );
+    }
+    return SizedBox();
+  }
+
+  Widget buildNumpadAndButtons() {
+    final buttonTextStyle = GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold);
+    final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
+    final buttonPadding = EdgeInsets.symmetric(vertical: 18); // Increased padding
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      children: [
+        // Numpad section (2/3)
+        Expanded(
+          flex: 2,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // First 3 rows: 1-9
+              for (var row = 0; row < 3; row++)
+                Row(
+                  children: [
+                    for (var col = 1; col <= 3; col++)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: ElevatedButton(
+                            onPressed: () => onNumpadTap('${row * 3 + col}'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                              foregroundColor: isDark ? Colors.white : Colors.black,
+                              textStyle: buttonTextStyle,
+                              shape: buttonShape,
+                              padding: buttonPadding,
+                              minimumSize: Size(0, 56),
+                            ),
+                            child: Text('${row * 3 + col}'),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              // Last row: Bust (spans 2 columns), 0
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: ElevatedButton(
+                        onPressed: () => onNumpadTap('Bust'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          textStyle: buttonTextStyle,
+                          shape: buttonShape,
+                          padding: buttonPadding,
+                          minimumSize: Size(0, 56),
+                        ),
+                        child: const Text('Bust'),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: ElevatedButton(
+                        onPressed: () => onNumpadTap('0'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                          foregroundColor: isDark ? Colors.white : Colors.black,
+                          textStyle: buttonTextStyle,
+                          shape: buttonShape,
+                          padding: buttonPadding,
+                          minimumSize: Size(0, 56),
+                        ),
+                        child: const Text('0'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Button section (1/3)
+        Expanded(
+          flex: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => onNumpadTap('OK'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        textStyle: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.bold),
+                        shape: buttonShape,
+                        padding: EdgeInsets.symmetric(vertical: 22), // More vertical padding
+                        minimumSize: Size(0, 64), // Ensure enough height
+                      ),
+                      child: const Text('Valider', overflow: TextOverflow.ellipsis, maxLines: 1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _undoLastScore();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[700],
+                            foregroundColor: Colors.white,
+                            shape: buttonShape,
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size(0, 48),
+                          ),
+                          child: const Icon(Icons.undo, size: 24),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _scoreController.clear();
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange[700],
+                            foregroundColor: Colors.white,
+                            shape: buttonShape,
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size(0, 48),
+                          ),
+                          child: const Icon(Icons.clear, size: 24),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildScorecards() {
+    // Only show scores for X01
+    if (widget.gameMode != 'X01') return SizedBox.shrink();
+    return SizedBox(
+      height: 200,
+      child: ListView.separated(
+        itemCount: widget.players.length,
+        separatorBuilder: (_, __) => SizedBox(height: 16),
+        itemBuilder: (context, i) {
+          final avg = _average(i).toStringAsFixed(1);
+          final isCurrent = i == currentPlayer;
+          return AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
+              gradient: isCurrent
+                  ? LinearGradient(colors: [Colors.green.shade400, Colors.green.shade700])
+                  : LinearGradient(colors: [Colors.white.withValues(alpha: 0.7), Colors.white.withValues(alpha: 0.7)]),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                if (isCurrent)
+                  BoxShadow(
+                    color: Colors.green.withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: Offset(0, 4),
+                  ),
+              ],
+            ),
+            child: ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              leading: CircleAvatar(
+                radius: 28,
+                backgroundColor: isCurrent ? Colors.white : Colors.green.shade100,
+                child: Text(
+                  widget.players[i][0].toUpperCase(),
+                  style: GoogleFonts.montserrat(
+                    color: isCurrent ? Colors.green.shade700 : Colors.green.shade900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 28,
+                  ),
+                ),
+              ),
+              title: Text(
+                widget.players[i],
+                style: GoogleFonts.montserrat(
+                  color: isCurrent ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ),
+              subtitle: Text(
+                'Avg: $avg',
+                style: GoogleFonts.montserrat(
+                  color: isCurrent ? Colors.white70 : Colors.black.withValues(alpha: 0.7),
+                  fontSize: 16,
+                ),
+              ),
+              trailing: Text(
+                '${scores[i]} pts',
+                style: GoogleFonts.montserrat(
+                  color: isCurrent ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Add missing onNumpadTap method for numpad functionality
+  void onNumpadTap(String value) {
+    setState(() {
+      if (value == 'C') {
+        _scoreController.clear();
+      } else if (value == 'Bust') {
+        _burst();
+      } else if (value == 'OK') {
+        _submitScore();
+      } else {
+        _scoreController.text += value;
+      }
+    });
+  }
+
+  // Show the score being typed above the numpad/buttons
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -136,252 +758,74 @@ class _GamePageState extends State<GamePage> {
     final numpadHeight = size.height / 3;
     final scorecardHeight = size.height * 2 / 3 - 32; // minus padding
 
-    void onNumpadTap(String value) {
-      setState(() {
-        if (value == 'C') {
-          _scoreController.clear();
-        } else if (value == 'Bust') {
-          _burst();
-        } else if (value == 'OK') {
-          _submitScore();
-        } else {
-          _scoreController.text += value;
-        }
-      });
-    }
-
-    Widget buildNumpadAndButtons() {
-      final buttonTextStyle = GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold);
-      final buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
-      final buttonPadding = EdgeInsets.symmetric(vertical: 18); // Increased padding
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      return Row(
-        children: [
-          // Numpad section (2/3)
-          Expanded(
-            flex: 2,
+    // Full screen layout for non-X01 games
+    if (widget.gameMode != 'X01') {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Partie en cours'),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.exit_to_app),
+              onPressed: _quitGame,
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // First 3 rows: 1-9
-                for (var row = 0; row < 3; row++)
-                  Row(
-                    children: [
-                      for (var col = 1; col <= 3; col++)
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: ElevatedButton(
-                              onPressed: () => onNumpadTap('${row * 3 + col}'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                                foregroundColor: isDark ? Colors.white : Colors.black,
-                                textStyle: buttonTextStyle,
-                                shape: buttonShape,
-                                padding: buttonPadding,
-                                minimumSize: Size(0, 56),
-                              ),
-                              child: Text('${row * 3 + col}'),
-                            ),
+                // Current player indicator
+                Card(
+                  color: Colors.blueAccent,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person, color: Colors.white, size: 32),
+                        SizedBox(width: 12),
+                        Text(
+                          "It's ",
+                          style: GoogleFonts.montserrat(color: Colors.white, fontSize: 22),
+                        ),
+                        Text(
+                          widget.players[currentPlayer],
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 26,
                           ),
                         ),
-                    ],
+                        Text(
+                          "'s turn",
+                          style: GoogleFonts.montserrat(color: Colors.white, fontSize: 22),
+                        ),
+                      ],
+                    ),
                   ),
-                // Last row: Bust (spans 2 columns), 0
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: ElevatedButton(
-                          onPressed: () => onNumpadTap('Bust'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            textStyle: buttonTextStyle,
-                            shape: buttonShape,
-                            padding: buttonPadding,
-                            minimumSize: Size(0, 56),
-                          ),
-                          child: const Text('Bust'),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: ElevatedButton(
-                          onPressed: () => onNumpadTap('0'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                            foregroundColor: isDark ? Colors.white : Colors.black,
-                            textStyle: buttonTextStyle,
-                            shape: buttonShape,
-                            padding: buttonPadding,
-                            minimumSize: Size(0, 56),
-                          ),
-                          child: const Text('0'),
-                        ),
-                      ),
-                    ),
-                  ],
+                ),
+                if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') buildCricketTable(),
+                if (widget.gameMode == 'Shangai') buildShangaiTable(),
+                if (widget.gameMode == 'AroundClock') buildAroundClockTable(),
+                SizedBox(height: 16),
+                // Modern button arrangement
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: buildModernInputUI(),
                 ),
               ],
             ),
           ),
-          // Button section (1/3)
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => onNumpadTap('OK'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          textStyle: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.bold),
-                          shape: buttonShape,
-                          padding: EdgeInsets.symmetric(vertical: 22), // More vertical padding
-                          minimumSize: Size(0, 64), // Ensure enough height
-                        ),
-                        child: const Text('Valider', overflow: TextOverflow.ellipsis, maxLines: 1),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _undoLastScore();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey[700],
-                              foregroundColor: Colors.white,
-                              shape: buttonShape,
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size(0, 48),
-                            ),
-                            child: const Icon(Icons.undo, size: 24),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 1,
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _scoreController.clear();
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange[700],
-                              foregroundColor: Colors.white,
-                              shape: buttonShape,
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size(0, 48),
-                            ),
-                            child: const Icon(Icons.clear, size: 24),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    Widget buildScorecards() {
-      return SizedBox(
-        height: scorecardHeight,
-        child: ListView.separated(
-          itemCount: widget.players.length,
-          separatorBuilder: (_, __) => SizedBox(height: 16),
-          itemBuilder: (context, i) {
-            final avg = _average(i).toStringAsFixed(1);
-            final isCurrent = i == currentPlayer;
-            return AnimatedContainer(
-              duration: Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              decoration: BoxDecoration(
-                gradient: isCurrent
-                    ? LinearGradient(colors: [Colors.green.shade400, Colors.green.shade700])
-                    : LinearGradient(colors: [cardBg, cardBg]),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  if (isCurrent)
-                    BoxShadow(
-                      color: Colors.green.withValues(alpha: 0.2),
-                      blurRadius: 16,
-                      offset: Offset(0, 4),
-                    ),
-                ],
-              ),
-              child: ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                leading: CircleAvatar(
-                  radius: 28,
-                  backgroundColor: isCurrent ? Colors.white : Colors.green.shade100,
-                  child: Text(
-                    widget.players[i][0].toUpperCase(),
-                    style: GoogleFonts.montserrat(
-                      color: isCurrent ? Colors.green.shade700 : Colors.green.shade900,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                    ),
-                  ),
-                ),
-                title: Text(
-                  widget.players[i],
-                  style: GoogleFonts.montserrat(
-                    color: isCurrent ? Colors.white : cardText,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
-                ),
-                subtitle: Text(
-                  'Avg: $avg',
-                  style: GoogleFonts.montserrat(
-                    color: isCurrent ? Colors.white70 : cardText.withValues(alpha: 0.7),
-                    fontSize: 16,
-                  ),
-                ),
-                trailing: Text(
-                  '${scores[i]} pts',
-                  style: GoogleFonts.montserrat(
-                    color: isCurrent ? Colors.white : cardText,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-              ),
-            );
-          },
         ),
       );
     }
 
-    // Show the score being typed above the numpad/buttons
+    // X01 specific layout
     return Scaffold(
       appBar: AppBar(
         title: Text('Partie en cours'),
@@ -425,11 +869,247 @@ class _GamePageState extends State<GamePage> {
           ),
           SizedBox(
             height: numpadHeight,
-            child: buildNumpadAndButtons(),
+            child: buildInputUI(),
           ),
         ],
       ),
     );
   }
-}
 
+  // Add this new method for modern button arrangement
+  Widget buildModernInputUI() {
+    if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') {
+      List<String> buttons = [...cricketTargets, 'Miss'];
+      return Column(
+        children: [
+          GridView.count(
+            crossAxisCount: 4,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.2,
+            children: buttons.map((b) => ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.greenAccent,
+                foregroundColor: Colors.white,
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
+                padding: EdgeInsets.symmetric(vertical: 16),
+              ),
+              onPressed: () {
+                setState(() {
+                  currentTurn.add({'target': b, 'mult': 1});
+                });
+              },
+              child: Text(b),
+            )).toList(),
+          ),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                icon: Icon(Icons.undo),
+                label: Text('Cancel Last'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  setState(() {
+                    currentTurn.removeLast();
+                  });
+                } : null,
+              ),
+              SizedBox(width: 24),
+              ElevatedButton.icon(
+                icon: Icon(Icons.check),
+                label: Text('Validate'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  // Apply turn
+                  for (var dart in currentTurn) {
+                    String t = dart['target'];
+                    if (t == 'Miss') continue;
+                    int mult = dart['mult'] ?? 1;
+                    if (cricketHits[t] != null) {
+                      int before = cricketHits[t]![currentPlayer];
+                      int after = before + mult;
+                      int extra = after > 3 ? after - 3 : 0;
+                      cricketHits[t]![currentPlayer] = after > 3 ? 3 : after;
+                      if (extra > 0) {
+                        int others = 0;
+                        for (int i = 0; i < widget.players.length; i++) {
+                          if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) others++;
+                        }
+                        if (others > 0) {
+                          int points = (t == 'Bull' ? 25 : t == 'DBull' ? 50 : int.tryParse(t) ?? 0) * extra;
+                          if (widget.gameMode == 'Cricket') {
+                            cricketPoints[currentPlayer] += points;
+                          } else {
+                            // CutThroat: add points to opponents who haven't closed
+                            for (int i = 0; i < widget.players.length; i++) {
+                              if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) cricketPoints[i] += points;
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  turnHistory[currentPlayer].add({'turn': List.from(currentTurn)});
+                  currentTurn.clear();
+                  // Check win
+                  bool allClosed = cricketTargets.every((t) => (cricketHits[t]?[currentPlayer] ?? 0) == 3);
+                  bool win = false;
+                  if (allClosed) {
+                    if (widget.gameMode == 'Cricket') {
+                      win = cricketPoints[currentPlayer] > cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a > b ? a : b);
+                    } else {
+                      win = cricketPoints[currentPlayer] < cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a < b ? a : b);
+                    }
+                  }
+                  if (win) {
+                    _showWinnerDialog(widget.players[currentPlayer]);
+                  } else {
+                    setState(() {
+                      currentPlayer = (currentPlayer + 1) % widget.players.length;
+                    });
+                  }
+                } : null,
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text('Current turn: ' + currentTurn.map((d) => d['target']).join(', ')),
+        ],
+      );
+    }
+    if (widget.gameMode == 'Shangai') {
+      String target = shangaiRound.toString();
+      List<String> buttons = ['S$target', 'D$target', 'T$target', 'Shangai', 'Miss'];
+      return Column(
+        children: [
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.2,
+            children: buttons.map((b) => ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.deepPurpleAccent,
+                foregroundColor: Colors.white,
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
+                padding: EdgeInsets.symmetric(vertical: 16),
+              ),
+              onPressed: () {
+                setState(() {
+                  currentTurn.add({'type': b});
+                });
+              },
+              child: Text(b),
+            )).toList(),
+          ),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                icon: Icon(Icons.undo),
+                label: Text('Cancel Last'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  setState(() {
+                    currentTurn.removeLast();
+                  });
+                } : null,
+              ),
+              SizedBox(width: 24),
+              ElevatedButton.icon(
+                icon: Icon(Icons.check),
+                label: Text('Validate'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                onPressed: currentTurn.isNotEmpty ? () {
+                  // Apply turn
+                  int score = 0;
+                  bool shangai = false;
+                  bool s = false, d = false, t = false;
+                  for (var dart in currentTurn) {
+                    String type = dart['type'];
+                    if (type == 'Miss') continue;
+                    if (type == 'Shangai') {
+                      shangai = true;
+                      s = d = t = true;
+                      score = 3 * shangaiRound + 2 * shangaiRound + shangaiRound;
+                      break;
+                    }
+                    if (type.startsWith('S')) { score += shangaiRound; s = true; }
+                    if (type.startsWith('D')) { score += 2 * shangaiRound; d = true; }
+                    if (type.startsWith('T')) { score += 3 * shangaiRound; t = true; }
+                  }
+                  shangaiTurns[currentPlayer].add({'turn': List.from(currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
+                  currentTurn.clear();
+                  // Check win
+                  if (shangai || (s && d && t)) {
+                    _showWinnerDialog(widget.players[currentPlayer]);
+                  } else {
+                    // Next round or next player
+                    if (currentPlayer == widget.players.length - 1) {
+                      if (shangaiRound == 7) {
+                        // End game, highest score wins
+                        int maxScore = 0, winner = 0;
+                        for (int i = 0; i < widget.players.length; i++) {
+                          int total = shangaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
+                          if (total > maxScore) { maxScore = total; winner = i; }
+                        }
+                        _showWinnerDialog(widget.players[winner]);
+                      } else {
+                        setState(() {
+                          shangaiRound++;
+                          currentPlayer = 0;
+                        });
+                      }
+                    } else {
+                      setState(() {
+                        currentPlayer++;
+                      });
+                    }
+                  }
+                } : null,
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text('Current turn: ' + currentTurn.map((d) => d['type']).join(', ')),
+        ],
+      );
+    }
+    return SizedBox();
+  }
+}

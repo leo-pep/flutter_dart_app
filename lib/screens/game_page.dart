@@ -11,8 +11,9 @@ class GamePage extends StatefulWidget {
   final List<String> players;
   final int startingScore;
   final String gameMode;
+  final String? shangaiMode;
 
-  const GamePage({super.key, required this.players, required this.startingScore, required this.gameMode});
+  const GamePage({super.key, required this.players, required this.startingScore, required this.gameMode, this.shangaiMode});
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -42,7 +43,7 @@ class _GamePageState extends State<GamePage> {
       );
     }
     if (widget.gameMode == 'Shangai') {
-      shangaiGame = ShangaiGame(players: widget.players);
+      shangaiGame = ShangaiGame(players: widget.players, mode: widget.shangaiMode ?? 'Shangai7');
     }
     if (widget.gameMode == 'AroundClock') {
       aroundClockGame = AroundClockGame(players: widget.players);
@@ -443,69 +444,110 @@ class _GamePageState extends State<GamePage> {
     }
     if (widget.gameMode == 'Shangai') {
       // Shangai input: S/D/T<target>, Shangai, Miss
-      String target = shangaiGame!.currentRound.toString();
-      List<String> buttons = ['S$target', 'D$target', 'T$target', 'Shangai', 'Miss'];
+      final target = shangaiGame!.currentTarget;
+      final isBullRound = (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull');
+      final targetLabel = target == 'Bull' ? 'Bull' : target.toString();
+      List<String> buttons = [
+        'S$targetLabel', 'D$targetLabel', 'T$targetLabel', 'Shangai', 'Miss'
+      ];
       return Column(
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: buttons.map((b) => ElevatedButton(
-              onPressed: shangaiGame!.currentTurn.length >= 3 ? null : () {
-                setState(() {
-                  shangaiGame!.currentTurn.add({'type': b});
-                });
-              },
-              child: Text(b, style: GoogleFonts.montserrat(fontSize: 20)),
-            )).toList(),
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.2,
+            children: buttons.map((b) {
+              final isShangaiButton = b == 'Shangai';
+              return ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.deepPurpleAccent,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+                onPressed: shangaiGame!.currentTurn.length >= 3 || (isShangaiButton && isBullRound)
+                    ? null
+                    : () {
+                        setState(() {
+                          shangaiGame!.currentTurn.add({'type': b});
+                        });
+                      },
+                child: Text(b),
+              );
+            }).toList(),
           ),
+          SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton.icon(
                 icon: Icon(Icons.undo),
                 label: Text('Cancel Last'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
                   setState(() {
                     shangaiGame!.currentTurn.removeLast();
                   });
                 } : null,
               ),
-              SizedBox(width: 16),
+              SizedBox(width: 24),
               ElevatedButton.icon(
                 icon: Icon(Icons.check),
-                label: Text('End Turn'),
+                label: Text('Validate'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
-                  // Apply turn
                   int score = 0;
                   bool shangai = false;
                   bool s = false, d = false, t = false;
+                  final target = shangaiGame!.currentTarget;
                   for (var dart in shangaiGame!.currentTurn) {
                     String type = dart['type'];
                     if (type == 'Miss') continue;
                     if (type == 'Shangai') {
-                      shangai = true;
-                      s = d = t = true;
-                      score = 3 * shangaiGame!.currentRound + 2 * shangaiGame!.currentRound + shangaiGame!.currentRound;
+                      if (!(shangaiGame!.mode == 'ShangaiBull' && target == 'Bull')) {
+                        shangai = true;
+                        s = d = t = true;
+                        if (target == 'Bull') {
+                          score = 50 + 75 + 25;
+                        } else if (target is int) {
+                          score = (3 * target + 2 * target + target).toInt();
+                        }
+                      }
                       break;
                     }
-                    if (type.startsWith('S')) { score += shangaiGame!.currentRound; s = true; }
-                    if (type.startsWith('D')) { score += 2 * shangaiGame!.currentRound; d = true; }
-                    if (type.startsWith('T')) { score += 3 * shangaiGame!.currentRound; t = true; }
+                    if (type.startsWith('S')) { score += target == 'Bull' ? 25 : (target is int ? target : 0); s = true; }
+                    if (type.startsWith('D')) { score += target == 'Bull' ? 50 : (target is int ? 2 * target : 0); d = true; }
+                    if (type.startsWith('T')) { score += target == 'Bull' ? 75 : (target is int ? 3 * target : 0); t = true; }
                   }
-                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
+                  bool isShangai = shangai || (s && d && t);
+                  if (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull') isShangai = false;
+                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': isShangai});
                   shangaiGame!.currentTurn.clear();
-                  // Check win
-                  if (shangai || (s && d && t)) {
+                  if (isShangai) {
                     _showWinnerDialog(widget.players[currentPlayer]);
                   } else {
-                    // Next round or next player
                     if (currentPlayer == widget.players.length - 1) {
-                      if (shangaiGame!.currentRound == 7) {
-                        // End game, highest score wins
+                      if (shangaiGame!.currentRound == shangaiGame!.maxRound) {
                         int maxScore = 0, winner = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
+                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + (((b['score'] ?? 0) as num).toInt()));
                           if (total > maxScore) { maxScore = total; winner = i; }
                         }
                         _showWinnerDialog(widget.players[winner]);
@@ -526,7 +568,7 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ${shangaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
+          Text('Current turn: ' + shangaiGame!.currentTurn.map((d) => d['type']).join(', ')),
         ],
       );
     }
@@ -1077,8 +1119,12 @@ class _GamePageState extends State<GamePage> {
       );
     }
     if (widget.gameMode == 'Shangai') {
-      String target = shangaiGame!.currentRound.toString();
-      List<String> buttons = ['S$target', 'D$target', 'T$target', 'Shangai', 'Miss'];
+      final target = shangaiGame!.currentTarget;
+      final isBullRound = (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull');
+      final targetLabel = target == 'Bull' ? 'Bull' : target.toString();
+      List<String> buttons = [
+        'S$targetLabel', 'D$targetLabel', 'T$targetLabel', 'Shangai', 'Miss'
+      ];
       return Column(
         children: [
           GridView.count(
@@ -1088,22 +1134,27 @@ class _GamePageState extends State<GamePage> {
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childAspectRatio: 2.2,
-            children: buttons.map((b) => ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.deepPurpleAccent,
-                foregroundColor: Colors.white,
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
-                padding: EdgeInsets.symmetric(vertical: 16),
-              ),
-              onPressed: shangaiGame!.currentTurn.length >= 3 ? null : () {
-                setState(() {
-                  shangaiGame!.currentTurn.add({'type': b});
-                });
-              },
-              child: Text(b),
-            )).toList(),
+            children: buttons.map((b) {
+              final isShangaiButton = b == 'Shangai';
+              return ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.deepPurpleAccent,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+                onPressed: shangaiGame!.currentTurn.length >= 3 || (isShangaiButton && isBullRound)
+                    ? null
+                    : () {
+                        setState(() {
+                          shangaiGame!.currentTurn.add({'type': b});
+                        });
+                      },
+                child: Text(b),
+              );
+            }).toList(),
           ),
           SizedBox(height: 16),
           Row(
@@ -1137,36 +1188,41 @@ class _GamePageState extends State<GamePage> {
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
-                  // Apply turn
                   int score = 0;
                   bool shangai = false;
                   bool s = false, d = false, t = false;
+                  final target = shangaiGame!.currentTarget;
                   for (var dart in shangaiGame!.currentTurn) {
                     String type = dart['type'];
                     if (type == 'Miss') continue;
                     if (type == 'Shangai') {
-                      shangai = true;
-                      s = d = t = true;
-                      score = 3 * shangaiGame!.currentRound + 2 * shangaiGame!.currentRound + shangaiGame!.currentRound;
+                      if (!(shangaiGame!.mode == 'ShangaiBull' && target == 'Bull')) {
+                        shangai = true;
+                        s = d = t = true;
+                        if (target == 'Bull') {
+                          score = 50 + 75 + 25;
+                        } else if (target is int) {
+                          score = (3 * target + 2 * target + target).toInt();
+                        }
+                      }
                       break;
                     }
-                    if (type.startsWith('S')) { score += shangaiGame!.currentRound; s = true; }
-                    if (type.startsWith('D')) { score += 2 * shangaiGame!.currentRound; d = true; }
-                    if (type.startsWith('T')) { score += 3 * shangaiGame!.currentRound; t = true; }
+                    if (type.startsWith('S')) { score += target == 'Bull' ? 25 : (target is int ? target : 0); s = true; }
+                    if (type.startsWith('D')) { score += target == 'Bull' ? 50 : (target is int ? 2 * target : 0); d = true; }
+                    if (type.startsWith('T')) { score += target == 'Bull' ? 75 : (target is int ? 3 * target : 0); t = true; }
                   }
-                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
+                  bool isShangai = shangai || (s && d && t);
+                  if (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull') isShangai = false;
+                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': isShangai});
                   shangaiGame!.currentTurn.clear();
-                  // Check win
-                  if (shangai || (s && d && t)) {
+                  if (isShangai) {
                     _showWinnerDialog(widget.players[currentPlayer]);
                   } else {
-                    // Next round or next player
                     if (currentPlayer == widget.players.length - 1) {
-                      if (shangaiGame!.currentRound == 7) {
-                        // End game, highest score wins
+                      if (shangaiGame!.currentRound == shangaiGame!.maxRound) {
                         int maxScore = 0, winner = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
+                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + (((b['score'] ?? 0) as num).toInt()));
                           if (total > maxScore) { maxScore = total; winner = i; }
                         }
                         _showWinnerDialog(widget.players[winner]);

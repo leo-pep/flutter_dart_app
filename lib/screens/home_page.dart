@@ -46,6 +46,11 @@ class _HomePageState extends State<HomePage> {
       'id': 'Shangai',
       'label': 'Shangai',
       'desc': '7 rounds, each round targets a number. Score by hitting S/D/T. Win by highest score or Shangai (S+D+T in one round).',
+      'subModes': [
+        {'id': 'Shangai7', 'label': 'Shangai (1-7)', 'desc': 'Classic Shangai, 7 rounds (1-7).'},
+        {'id': 'Shangai20', 'label': 'Shangai 20', 'desc': 'Shangai from 1 to 20.'},
+        {'id': 'ShangaiBull', 'label': 'Shangai Bull', 'desc': 'Shangai from 1 to 20, then Bull. No Shangai possible on Bull round.'},
+      ],
     },
     {
       'id': 'AroundClock',
@@ -96,11 +101,15 @@ class _HomePageState extends State<HomePage> {
     if (selectedPlayers.isNotEmpty) {
       String gameModeToPass;
       int startingScoreToPass = 0;
+      Map<String, dynamic>? extraArgs;
       if (selectedMainMode == 'X01') {
         gameModeToPass = 'X01';
         startingScoreToPass = int.tryParse(selectedSubMode ?? '301') ?? 301;
       } else if (selectedMainMode == 'Cricket') {
         gameModeToPass = selectedSubMode ?? 'Cricket';
+      } else if (selectedMainMode == 'Shangai') {
+        gameModeToPass = 'Shangai';
+        extraArgs = {'shangaiMode': selectedSubMode ?? 'Shangai7'};
       } else {
         gameModeToPass = selectedMainMode;
       }
@@ -111,6 +120,8 @@ class _HomePageState extends State<HomePage> {
             players: selectedPlayers,
             startingScore: startingScoreToPass,
             gameMode: gameModeToPass,
+            // Pass extraArgs if Shangai
+            shangaiMode: extraArgs != null ? extraArgs['shangaiMode'] : null,
           ),
         ),
       );

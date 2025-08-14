@@ -207,6 +207,29 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+            if (selectedGameMode == 'X01')
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+                child: DropdownButtonFormField<int>(
+                  value: selectedStartingScore,
+                  decoration: InputDecoration(
+                    labelText: 'Starting Score',
+                    prefixIcon: Icon(Icons.score),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    filled: true,
+                    fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
+                  ),
+                  style: GoogleFonts.montserrat(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
+                  dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
+                  onChanged: (value) {
+                    if (value != null) setState(() => selectedStartingScore = value);
+                  },
+                  items: (gameModes.firstWhere((m) => m['id'] == 'X01')['scores'] as List<int>).map((score) => DropdownMenuItem<int>(
+                    value: score,
+                    child: Text(score.toString(), style: GoogleFonts.montserrat()),
+                  )).toList(),
+                ),
+              ),
             const SizedBox(height: 24),
             Expanded(
               child: Column(
@@ -302,7 +325,12 @@ class _HomePageState extends State<HomePage> {
           child: FilledButton.icon(
             onPressed: _startGame,
             icon: Icon(Icons.play_arrow),
-            label: Text('Start Game ($selectedStartingScore)', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+            label: Text(
+              selectedGameMode == 'X01'
+                  ? 'Start Game ($selectedStartingScore)'
+                  : 'Start Game (${gameModes.firstWhere((m) => m['id'] == selectedGameMode)['label']})',
+              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            ),
             style: FilledButton.styleFrom(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),

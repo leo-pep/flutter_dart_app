@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../gamemodes/cricket.dart';
+import '../gamemodes/shangai.dart';
+import '../gamemodes/around_clock.dart';
+import '../gamemodes/x01.dart';
 
 class GamePage extends StatefulWidget {
   final List<String> players;
@@ -20,18 +24,11 @@ class _GamePageState extends State<GamePage> {
   int currentPlayer = 0;
   final TextEditingController _scoreController = TextEditingController();
 
-  // --- Gamemode-specific state ---
-  List<String> cricketTargets = ['15', '16', '17', '18', '19', '20', 'Bull', 'DBull'];
-  Map<String, List<int>> cricketHits = {};
-  List<int> cricketPoints = [];
-  List<List<Map<String, dynamic>>> turnHistory = [];
-  int shangaiRound = 1;
-  List<List<Map<String, dynamic>>> shangaiTurns = [];
-  int aroundTarget = 1;
-  List<List<int>> aroundHits = [];
-  int dartsLeft = 3;
-  List<Map<String, dynamic>> currentTurn = [];
-  late List<int> aroundTargets; // Each player's current target
+  // Game mode logic classes
+  CricketGame? cricketGame;
+  ShangaiGame? shangaiGame;
+  AroundClockGame? aroundClockGame;
+  X01Game? x01Game;
 
   @override
   void initState() {
@@ -39,20 +36,26 @@ class _GamePageState extends State<GamePage> {
     scores = List.filled(widget.players.length, widget.startingScore);
     history = List.generate(widget.players.length, (_) => []);
     if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') {
-      cricketHits = {for (var t in cricketTargets) t: List.filled(widget.players.length, 0)};
-      cricketPoints = List.filled(widget.players.length, 0);
-      turnHistory = List.generate(widget.players.length, (_) => []);
+      cricketGame = CricketGame(
+        players: widget.players,
+        isCutThroat: widget.gameMode == 'CutThroat',
+      );
     }
     if (widget.gameMode == 'Shangai') {
-      shangaiTurns = List.generate(widget.players.length, (_) => []);
+      shangaiGame = ShangaiGame(players: widget.players);
     }
     if (widget.gameMode == 'AroundClock') {
-      aroundHits = List.generate(widget.players.length, (_) => []);
-      aroundTargets = List.filled(widget.players.length, 1); // Start each player at 1
+      aroundClockGame = AroundClockGame(players: widget.players);
+    }
+    if (widget.gameMode == 'X01') {
+      x01Game = X01Game(players: widget.players, startingScore: widget.startingScore);
     }
   }
 
   double _average(int index) {
+    if (widget.gameMode == 'X01' && x01Game != null) {
+      return x01Game!.average(index);
+    }
     final throws = history[index];
     if (throws.isEmpty) return 0;
     final total = throws.reduce((a, b) => a + b);
@@ -60,6 +63,30 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _submitScore({int? overrideValue}) async {
+    if (widget.gameMode == 'X01' && x01Game != null) {
+      final value = overrideValue ?? int.tryParse(_scoreController.text);
+      if (value == null) return;
+      final result = x01Game!.submitScore(value);
+      if (result['error'] != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Le score maximum est 180 !'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+      setState(() {
+        if (result['winner'] != null) {
+          _saveGameResult(result['winner']);
+          _showWinnerDialog(result['winner']);
+        }
+        _scoreController.clear();
+      });
+      return;
+    }
+
     final value = overrideValue ?? int.tryParse(_scoreController.text);
     if (value == null || value < 0 || value > 180) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -71,7 +98,6 @@ class _GamePageState extends State<GamePage> {
       );
       return;
     }
-
     setState(() {
       final newScore = scores[currentPlayer] - value;
       if (newScore < 0) {
@@ -93,6 +119,10 @@ class _GamePageState extends State<GamePage> {
 
   void _undoLastScore() {
     setState(() {
+      if (widget.gameMode == 'X01' && x01Game != null) {
+        x01Game!.undoLastScore();
+        return;
+      }
       final lastPlayer = (currentPlayer - 1 + widget.players.length) % widget.players.length;
       if (history[lastPlayer].isNotEmpty) {
         final last = history[lastPlayer].removeLast();
@@ -147,6 +177,11 @@ class _GamePageState extends State<GamePage> {
 
   void _burst() {
     setState(() {
+      if (widget.gameMode == 'X01' && x01Game != null) {
+        x01Game!.burst();
+        _scoreController.clear();
+        return;
+      }
       history[currentPlayer].add(0);
       currentPlayer = (currentPlayer + 1) % widget.players.length;
       _scoreController.clear();
@@ -167,21 +202,21 @@ class _GamePageState extends State<GamePage> {
               child: DataTable(
                 columns: [
                   DataColumn(label: Text('Player', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
-                  ...cricketTargets.map((t) => DataColumn(label: Text(t, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)))),
+                  ...cricketGame!.cricketTargets.map((t) => DataColumn(label: Text(t, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)))),
                   DataColumn(label: Text('Points', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
                 ],
                 rows: [
                   for (int i = 0; i < widget.players.length; i++)
                     DataRow(cells: [
                       DataCell(Text(widget.players[i], style: GoogleFonts.montserrat())),
-                      ...cricketTargets.map((t) {
-                        int hits = cricketHits[t]?[i] ?? 0;
+                      ...cricketGame!.cricketTargets.map((t) {
+                        int hits = cricketGame!.cricketHits[t]?[i] ?? 0;
                         return DataCell(Container(
                           alignment: Alignment.center,
                           child: Text('$hits', style: GoogleFonts.montserrat(fontWeight: hits == 3 ? FontWeight.bold : FontWeight.normal, color: hits == 3 ? Colors.green : Colors.black)),
                         ));
                       }),
-                      DataCell(Text('${cricketPoints[i]}', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                      DataCell(Text('${cricketGame!.cricketPoints[i]}', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
                     ]),
                 ],
               ),
@@ -212,11 +247,11 @@ class _GamePageState extends State<GamePage> {
                   DataRow(cells: [
                     DataCell(Text(widget.players[i], style: GoogleFonts.montserrat())),
                     DataCell(Text(
-                      shangaiTurns[i].fold<int>(0, (a, b) => a + ((b['score'] ?? 0) as int)).toString(),
+                      shangaiGame!.shangaiTurns[i].fold<int>(0, (a, b) => a + ((b['score'] ?? 0) as int)).toString(),
                       style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                     )),
                     DataCell(Text(
-                      shangaiTurns[i].any((b) => b['shangai'] == true) ? '✔' : '',
+                      shangaiGame!.shangaiTurns[i].any((b) => b['shangai'] == true) ? '✔' : '',
                       style: GoogleFonts.montserrat(color: Colors.green, fontWeight: FontWeight.bold),
                     )),
                   ]),
@@ -248,11 +283,11 @@ class _GamePageState extends State<GamePage> {
                   DataRow(cells: [
                     DataCell(Text(widget.players[i], style: GoogleFonts.montserrat())),
                     DataCell(Text(
-                      _targetLabel(aroundTargets[i]),
+                      aroundClockGame!.targetLabel(aroundClockGame!.aroundTargets[i]),
                       style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                     )),
                     DataCell(Text(
-                      aroundHits[i].length.toString(),
+                      aroundClockGame!.aroundHits[i].length.toString(),
                       style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                     )),
                   ]),
@@ -264,20 +299,13 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  String _targetLabel(int target) {
-    if (target <= 20) return target.toString();
-    if (target == 21) return 'Bull';
-    if (target == 22) return 'DBull';
-    return 'Done';
-  }
-
   Widget buildInputUI() {
     if (widget.gameMode == 'X01') {
       return buildNumpadAndButtons();
     }
     if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') {
       // Cricket input: 15-20, Bull, DBull, Miss, multiple clicks, cancel
-      List<String> buttons = [...cricketTargets, 'Miss'];
+      List<String> buttons = [...cricketGame!.targets, 'Miss'];
       return Column(
         children: [
           Wrap(
@@ -286,7 +314,7 @@ class _GamePageState extends State<GamePage> {
             children: buttons.map((b) => ElevatedButton(
               onPressed: () {
                 setState(() {
-                  currentTurn.add({'target': b, 'mult': 1});
+                  cricketGame!.currentTurn.add({'target': b, 'mult': 1});
                 });
               },
               child: Text(b, style: GoogleFonts.montserrat(fontSize: 20)),
@@ -298,9 +326,9 @@ class _GamePageState extends State<GamePage> {
               ElevatedButton.icon(
                 icon: Icon(Icons.undo),
                 label: Text('Cancel Last'),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: cricketGame!.currentTurn.isNotEmpty ? () {
                   setState(() {
-                    currentTurn.removeLast();
+                    cricketGame!.currentTurn.removeLast();
                   });
                 } : null,
               ),
@@ -308,46 +336,46 @@ class _GamePageState extends State<GamePage> {
               ElevatedButton.icon(
                 icon: Icon(Icons.check),
                 label: Text('End Turn'),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: cricketGame!.currentTurn.isNotEmpty ? () {
                   // Apply turn
-                  for (var dart in currentTurn) {
+                  for (var dart in cricketGame!.currentTurn) {
                     String t = dart['target'];
                     if (t == 'Miss') continue;
                     int mult = dart['mult'] ?? 1;
-                    if (cricketHits[t] != null) {
-                      int before = cricketHits[t]![currentPlayer];
+                    if (cricketGame!.hits[t] != null) {
+                      int before = cricketGame!.hits[t]![currentPlayer];
                       int after = before + mult;
                       int extra = after > 3 ? after - 3 : 0;
-                      cricketHits[t]![currentPlayer] = after > 3 ? 3 : after;
+                      cricketGame!.hits[t]![currentPlayer] = after > 3 ? 3 : after;
                       if (extra > 0) {
                         int others = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) others++;
+                          if (i != currentPlayer && (cricketGame!.hits[t]?[i] ?? 0) < 3) others++;
                         }
                         if (others > 0) {
                           int points = (t == 'Bull' ? 25 : t == 'DBull' ? 50 : int.tryParse(t) ?? 0) * extra;
                           if (widget.gameMode == 'Cricket') {
-                            cricketPoints[currentPlayer] += points;
+                            cricketGame!.points[currentPlayer] += points;
                           } else {
                             // CutThroat: add points to opponents who haven't closed
                             for (int i = 0; i < widget.players.length; i++) {
-                              if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) cricketPoints[i] += points;
+                              if (i != currentPlayer && (cricketGame!.hits[t]?[i] ?? 0) < 3) cricketGame!.points[i] += points;
                             }
                           }
                         }
                       }
                     }
                   }
-                  turnHistory[currentPlayer].add({'turn': List.from(currentTurn)});
-                  currentTurn.clear();
+                  cricketGame!.turnHistory[currentPlayer].add({'turn': List.from(cricketGame!.currentTurn)});
+                  cricketGame!.currentTurn.clear();
                   // Check win
-                  bool allClosed = cricketTargets.every((t) => (cricketHits[t]?[currentPlayer] ?? 0) == 3);
+                  bool allClosed = cricketGame!.targets.every((t) => (cricketGame!.hits[t]?[currentPlayer] ?? 0) == 3);
                   bool win = false;
                   if (allClosed) {
                     if (widget.gameMode == 'Cricket') {
-                      win = cricketPoints[currentPlayer] > cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a > b ? a : b);
+                      win = cricketGame!.points[currentPlayer] > cricketGame!.points.where((p) => p != cricketGame!.points[currentPlayer]).reduce((a, b) => a > b ? a : b);
                     } else {
-                      win = cricketPoints[currentPlayer] < cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a < b ? a : b);
+                      win = cricketGame!.points[currentPlayer] < cricketGame!.points.where((p) => p != cricketGame!.points[currentPlayer]).reduce((a, b) => a < b ? a : b);
                     }
                   }
                   if (win) {
@@ -362,13 +390,13 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ${currentTurn.map((d) => d['target']).join(', ')}'),
+          Text('Current turn: ${cricketGame!.currentTurn.map((d) => d['target']).join(', ')}'),
         ],
       );
     }
     if (widget.gameMode == 'Shangai') {
       // Shangai input: S/D/T<target>, Shangai, Miss
-      String target = shangaiRound.toString();
+      String target = shangaiGame!.currentRound.toString();
       List<String> buttons = ['S$target', 'D$target', 'T$target', 'Shangai', 'Miss'];
       return Column(
         children: [
@@ -378,7 +406,7 @@ class _GamePageState extends State<GamePage> {
             children: buttons.map((b) => ElevatedButton(
               onPressed: () {
                 setState(() {
-                  currentTurn.add({'type': b});
+                  shangaiGame!.currentTurn.add({'type': b});
                 });
               },
               child: Text(b, style: GoogleFonts.montserrat(fontSize: 20)),
@@ -390,9 +418,9 @@ class _GamePageState extends State<GamePage> {
               ElevatedButton.icon(
                 icon: Icon(Icons.undo),
                 label: Text('Cancel Last'),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
                   setState(() {
-                    currentTurn.removeLast();
+                    shangaiGame!.currentTurn.removeLast();
                   });
                 } : null,
               ),
@@ -400,43 +428,43 @@ class _GamePageState extends State<GamePage> {
               ElevatedButton.icon(
                 icon: Icon(Icons.check),
                 label: Text('End Turn'),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
                   // Apply turn
                   int score = 0;
                   bool shangai = false;
                   bool s = false, d = false, t = false;
-                  for (var dart in currentTurn) {
+                  for (var dart in shangaiGame!.currentTurn) {
                     String type = dart['type'];
                     if (type == 'Miss') continue;
                     if (type == 'Shangai') {
                       shangai = true;
                       s = d = t = true;
-                      score = 3 * shangaiRound + 2 * shangaiRound + shangaiRound;
+                      score = 3 * shangaiGame!.currentRound + 2 * shangaiGame!.currentRound + shangaiGame!.currentRound;
                       break;
                     }
-                    if (type.startsWith('S')) { score += shangaiRound; s = true; }
-                    if (type.startsWith('D')) { score += 2 * shangaiRound; d = true; }
-                    if (type.startsWith('T')) { score += 3 * shangaiRound; t = true; }
+                    if (type.startsWith('S')) { score += shangaiGame!.currentRound; s = true; }
+                    if (type.startsWith('D')) { score += 2 * shangaiGame!.currentRound; d = true; }
+                    if (type.startsWith('T')) { score += 3 * shangaiGame!.currentRound; t = true; }
                   }
-                  shangaiTurns[currentPlayer].add({'turn': List.from(currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
-                  currentTurn.clear();
+                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
+                  shangaiGame!.currentTurn.clear();
                   // Check win
                   if (shangai || (s && d && t)) {
                     _showWinnerDialog(widget.players[currentPlayer]);
                   } else {
                     // Next round or next player
                     if (currentPlayer == widget.players.length - 1) {
-                      if (shangaiRound == 7) {
+                      if (shangaiGame!.currentRound == 7) {
                         // End game, highest score wins
                         int maxScore = 0, winner = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          int total = shangaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
+                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
                           if (total > maxScore) { maxScore = total; winner = i; }
                         }
                         _showWinnerDialog(widget.players[winner]);
                       } else {
                         setState(() {
-                          shangaiRound++;
+                          shangaiGame!.shangaiRound++;
                           currentPlayer = 0;
                         });
                       }
@@ -451,14 +479,14 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ${currentTurn.map((d) => d['type']).join(', ')}'),
+          Text('Current turn: ${shangaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
         ],
       );
     }
     if (widget.gameMode == 'AroundClock') {
       // Around the clock input: <target> or Miss, continue to next target if darts remain
-      int playerTarget = aroundTargets[currentPlayer];
-      String targetLabel = _targetLabel(playerTarget);
+      int playerTarget = aroundClockGame!.targets[currentPlayer];
+      String targetLabel = aroundClockGame!.targetLabel(playerTarget);
       List<String> buttons = [targetLabel, 'Miss'];
       return Column(
         children: [
@@ -468,23 +496,23 @@ class _GamePageState extends State<GamePage> {
             children: buttons.map((b) => ElevatedButton(
               onPressed: () {
                 setState(() {
-                  currentTurn.add({'target': b});
-                  dartsLeft--;
+                  aroundClockGame!.currentTurn.add({'target': b});
+                  aroundClockGame!.dartsLeft--;
                   if (b == targetLabel) {
-                    aroundHits[currentPlayer].add(playerTarget);
-                    aroundTargets[currentPlayer]++;
-                    if (aroundTargets[currentPlayer] > 22) aroundTargets[currentPlayer] = 22; // DBull is last
+                    aroundClockGame!.hits[currentPlayer].add(playerTarget);
+                    aroundClockGame!.targets[currentPlayer]++;
+                    if (aroundClockGame!.targets[currentPlayer] > 22) aroundClockGame!.targets[currentPlayer] = 22; // DBull is last
                   }
                   // End turn after 3 darts or if player finished
-                  if (dartsLeft == 0 || aroundTargets[currentPlayer] > 22) {
+                  if (aroundClockGame!.dartsLeft == 0 || aroundClockGame!.targets[currentPlayer] > 22) {
                     // Check win condition
-                    if (aroundTargets[currentPlayer] > 22) {
+                    if (aroundClockGame!.targets[currentPlayer] > 22) {
                       _showWinnerDialog(widget.players[currentPlayer]);
                       return;
                     }
                     // Next player turn
-                    currentTurn.clear();
-                    dartsLeft = 3;
+                    aroundClockGame!.currentTurn.clear();
+                    aroundClockGame!.dartsLeft = 3;
                     currentPlayer = (currentPlayer + 1) % widget.players.length;
                   }
                 });
@@ -493,7 +521,7 @@ class _GamePageState extends State<GamePage> {
             )).toList(),
           ),
           SizedBox(height: 8),
-          Text('Current turn: ${currentTurn.map((d) => d['target']).join(', ')}'),
+          Text('Current turn: ${aroundClockGame!.currentTurn.map((d) => d['target']).join(', ')}'),
         ],
       );
     }
@@ -671,7 +699,8 @@ class _GamePageState extends State<GamePage> {
         separatorBuilder: (_, __) => SizedBox(height: 16),
         itemBuilder: (context, i) {
           final avg = _average(i).toStringAsFixed(1);
-          final isCurrent = i == currentPlayer;
+          final isCurrent = x01Game != null ? i == x01Game!.currentPlayer : i == currentPlayer;
+          final score = x01Game != null ? x01Game!.scores[i] : scores[i];
           return AnimatedContainer(
             duration: Duration(milliseconds: 300),
             curve: Curves.easeInOut,
@@ -719,7 +748,7 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
               trailing: Text(
-                '${scores[i]} pts',
+                '{score} pts',
                 style: GoogleFonts.montserrat(
                   color: isCurrent ? Colors.white : Colors.black,
                   fontWeight: FontWeight.bold,
@@ -733,30 +762,12 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  // Add missing onNumpadTap method for numpad functionality
-  void onNumpadTap(String value) {
-    setState(() {
-      if (value == 'C') {
-        _scoreController.clear();
-      } else if (value == 'Bust') {
-        _burst();
-      } else if (value == 'OK') {
-        _submitScore();
-      } else {
-        _scoreController.text += value;
-      }
-    });
-  }
-
   // Show the score being typed above the numpad/buttons
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF23272F).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.7);
-    final cardText = isDark ? Colors.white : Colors.black;
     final size = MediaQuery.of(context).size;
     final numpadHeight = size.height / 3;
-    final scorecardHeight = size.height * 2 / 3 - 32; // minus padding
 
     // Full screen layout for non-X01 games
     if (widget.gameMode != 'X01') {
@@ -879,7 +890,7 @@ class _GamePageState extends State<GamePage> {
   // Add this new method for modern button arrangement
   Widget buildModernInputUI() {
     if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') {
-      List<String> buttons = [...cricketTargets, 'Miss'];
+      List<String> buttons = [...cricketGame!.targets, 'Miss'];
       return Column(
         children: [
           GridView.count(
@@ -900,7 +911,7 @@ class _GamePageState extends State<GamePage> {
               ),
               onPressed: () {
                 setState(() {
-                  currentTurn.add({'target': b, 'mult': 1});
+                  cricketGame!.currentTurn.add({'target': b, 'mult': 1});
                 });
               },
               child: Text(b),
@@ -920,9 +931,9 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: cricketGame!.currentTurn.isNotEmpty ? () {
                   setState(() {
-                    currentTurn.removeLast();
+                    cricketGame!.currentTurn.removeLast();
                   });
                 } : null,
               ),
@@ -937,46 +948,46 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: cricketGame!.currentTurn.isNotEmpty ? () {
                   // Apply turn
-                  for (var dart in currentTurn) {
+                  for (var dart in cricketGame!.currentTurn) {
                     String t = dart['target'];
                     if (t == 'Miss') continue;
                     int mult = dart['mult'] ?? 1;
-                    if (cricketHits[t] != null) {
-                      int before = cricketHits[t]![currentPlayer];
+                    if (cricketGame!.hits[t] != null) {
+                      int before = cricketGame!.hits[t]![currentPlayer];
                       int after = before + mult;
                       int extra = after > 3 ? after - 3 : 0;
-                      cricketHits[t]![currentPlayer] = after > 3 ? 3 : after;
+                      cricketGame!.hits[t]![currentPlayer] = after > 3 ? 3 : after;
                       if (extra > 0) {
                         int others = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) others++;
+                          if (i != currentPlayer && (cricketGame!.hits[t]?[i] ?? 0) < 3) others++;
                         }
                         if (others > 0) {
                           int points = (t == 'Bull' ? 25 : t == 'DBull' ? 50 : int.tryParse(t) ?? 0) * extra;
                           if (widget.gameMode == 'Cricket') {
-                            cricketPoints[currentPlayer] += points;
+                            cricketGame!.points[currentPlayer] += points;
                           } else {
                             // CutThroat: add points to opponents who haven't closed
                             for (int i = 0; i < widget.players.length; i++) {
-                              if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) cricketPoints[i] += points;
+                              if (i != currentPlayer && (cricketGame!.hits[t]?[i] ?? 0) < 3) cricketGame!.points[i] += points;
                             }
                           }
                         }
                       }
                     }
                   }
-                  turnHistory[currentPlayer].add({'turn': List.from(currentTurn)});
-                  currentTurn.clear();
+                  cricketGame!.turnHistory[currentPlayer].add({'turn': List.from(cricketGame!.currentTurn)});
+                  cricketGame!.currentTurn.clear();
                   // Check win
-                  bool allClosed = cricketTargets.every((t) => (cricketHits[t]?[currentPlayer] ?? 0) == 3);
+                  bool allClosed = cricketGame!.targets.every((t) => (cricketGame!.hits[t]?[currentPlayer] ?? 0) == 3);
                   bool win = false;
                   if (allClosed) {
                     if (widget.gameMode == 'Cricket') {
-                      win = cricketPoints[currentPlayer] > cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a > b ? a : b);
+                      win = cricketGame!.points[currentPlayer] > cricketGame!.points.where((p) => p != cricketGame!.points[currentPlayer]).reduce((a, b) => a > b ? a : b);
                     } else {
-                      win = cricketPoints[currentPlayer] < cricketPoints.where((p) => p != cricketPoints[currentPlayer]).reduce((a, b) => a < b ? a : b);
+                      win = cricketGame!.points[currentPlayer] < cricketGame!.points.where((p) => p != cricketGame!.points[currentPlayer]).reduce((a, b) => a < b ? a : b);
                     }
                   }
                   if (win) {
@@ -991,12 +1002,12 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ' + currentTurn.map((d) => d['target']).join(', ')),
+          Text('Current turn: ' + cricketGame!.currentTurn.map((d) => d['target']).join(', ')),
         ],
       );
     }
     if (widget.gameMode == 'Shangai') {
-      String target = shangaiRound.toString();
+      String target = shangaiGame!.currentRound.toString();
       List<String> buttons = ['S$target', 'D$target', 'T$target', 'Shangai', 'Miss'];
       return Column(
         children: [
@@ -1018,7 +1029,7 @@ class _GamePageState extends State<GamePage> {
               ),
               onPressed: () {
                 setState(() {
-                  currentTurn.add({'type': b});
+                  shangaiGame!.currentTurn.add({'type': b});
                 });
               },
               child: Text(b),
@@ -1038,9 +1049,9 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
                   setState(() {
-                    currentTurn.removeLast();
+                    shangaiGame!.currentTurn.removeLast();
                   });
                 } : null,
               ),
@@ -1055,43 +1066,43 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: currentTurn.isNotEmpty ? () {
+                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
                   // Apply turn
                   int score = 0;
                   bool shangai = false;
                   bool s = false, d = false, t = false;
-                  for (var dart in currentTurn) {
+                  for (var dart in shangaiGame!.currentTurn) {
                     String type = dart['type'];
                     if (type == 'Miss') continue;
                     if (type == 'Shangai') {
                       shangai = true;
                       s = d = t = true;
-                      score = 3 * shangaiRound + 2 * shangaiRound + shangaiRound;
+                      score = 3 * shangaiGame!.currentRound + 2 * shangaiGame!.currentRound + shangaiGame!.currentRound;
                       break;
                     }
-                    if (type.startsWith('S')) { score += shangaiRound; s = true; }
-                    if (type.startsWith('D')) { score += 2 * shangaiRound; d = true; }
-                    if (type.startsWith('T')) { score += 3 * shangaiRound; t = true; }
+                    if (type.startsWith('S')) { score += shangaiGame!.currentRound; s = true; }
+                    if (type.startsWith('D')) { score += 2 * shangaiGame!.currentRound; d = true; }
+                    if (type.startsWith('T')) { score += 3 * shangaiGame!.currentRound; t = true; }
                   }
-                  shangaiTurns[currentPlayer].add({'turn': List.from(currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
-                  currentTurn.clear();
+                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': shangai || (s && d && t)});
+                  shangaiGame!.currentTurn.clear();
                   // Check win
                   if (shangai || (s && d && t)) {
                     _showWinnerDialog(widget.players[currentPlayer]);
                   } else {
                     // Next round or next player
                     if (currentPlayer == widget.players.length - 1) {
-                      if (shangaiRound == 7) {
+                      if (shangaiGame!.currentRound == 7) {
                         // End game, highest score wins
                         int maxScore = 0, winner = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          int total = shangaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
+                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
                           if (total > maxScore) { maxScore = total; winner = i; }
                         }
                         _showWinnerDialog(widget.players[winner]);
                       } else {
                         setState(() {
-                          shangaiRound++;
+                          shangaiGame!.shangaiRound++;
                           currentPlayer = 0;
                         });
                       }
@@ -1106,10 +1117,71 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ' + currentTurn.map((d) => d['type']).join(', ')),
+          Text('Current turn: ' + shangaiGame!.currentTurn.map((d) => d['type']).join(', ')),
+        ],
+      );
+    }
+    if (widget.gameMode == 'AroundClock') {
+      // Around the clock input: <target> or Miss, continue to next target if darts remain
+      int playerTarget = aroundClockGame!.targets[currentPlayer];
+      String targetLabel = aroundClockGame!.targetLabel(playerTarget);
+      List<String> buttons = [targetLabel, 'Miss'];
+      return Column(
+        children: [
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.2,
+            children: buttons.map((b) => ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  aroundClockGame!.currentTurn.add({'target': b});
+                  aroundClockGame!.dartsLeft--;
+                  if (b == targetLabel) {
+                    aroundClockGame!.hits[currentPlayer].add(playerTarget);
+                    aroundClockGame!.targets[currentPlayer]++;
+                    if (aroundClockGame!.targets[currentPlayer] > 22) aroundClockGame!.targets[currentPlayer] = 22; // DBull is last
+                  }
+                  // End turn after 3 darts or if player finished
+                  if (aroundClockGame!.dartsLeft == 0 || aroundClockGame!.targets[currentPlayer] > 22) {
+                    // Check win condition
+                    if (aroundClockGame!.targets[currentPlayer] > 22) {
+                      _showWinnerDialog(widget.players[currentPlayer]);
+                      return;
+                    }
+                    // Next player turn
+                    aroundClockGame!.currentTurn.clear();
+                    aroundClockGame!.dartsLeft = 3;
+                    currentPlayer = (currentPlayer + 1) % widget.players.length;
+                  }
+                });
+              },
+              child: Text(b),
+            )).toList(),
+          ),
+          SizedBox(height: 8),
+          Text('Current turn: ${aroundClockGame!.currentTurn.map((d) => d['target']).join(', ')}'),
         ],
       );
     }
     return SizedBox();
+  }
+
+  // Add missing onNumpadTap method for numpad functionality
+  void onNumpadTap(String value) {
+    setState(() {
+      if (value == 'C') {
+        _scoreController.clear();
+      } else if (value == 'Bust') {
+        _burst();
+      } else if (value == 'OK') {
+        _submitScore();
+      } else {
+        _scoreController.text += value;
+      }
+    });
   }
 }

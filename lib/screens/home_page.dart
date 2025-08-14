@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
     {
       'id': 'Shangai',
       'label': 'Shangai',
-      'desc': '7 rounds, each round targets a number. Score by hitting S/D/T. Win by highest score or Shangai (S+D+T in one round).',
+      'desc': 'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.',
       'subModes': [
         {'id': 'Shangai7', 'label': 'Shangai 7', 'desc': 'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.'},
         {'id': 'Shangai20', 'label': 'Shangai 20', 'desc': 'Shangai from 1 to 20.\nA Shangai is Single, Double and Triple on the target in any order.'},

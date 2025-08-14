@@ -175,10 +175,10 @@ class _GamePageState extends State<GamePage> {
     Navigator.pop(context);
   }
 
-  void _burst() {
+  void _bust() {
     setState(() {
       if (widget.gameMode == 'X01' && x01Game != null) {
-        x01Game!.burst();
+        x01Game!.bust();
         _scoreController.clear();
         return;
       }
@@ -1238,7 +1238,7 @@ class _GamePageState extends State<GamePage> {
       if (value == 'C') {
         _scoreController.clear();
       } else if (value == 'Bust') {
-        _burst();
+        _bust();
       } else if (value == 'OK') {
         _submitScore();
       } else {

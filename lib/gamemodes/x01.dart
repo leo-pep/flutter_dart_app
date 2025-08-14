@@ -51,7 +51,7 @@ class X01Game {
     }
   }
 
-  void burst() {
+  void bust() {
     history[currentPlayer].add(0);
     currentPlayer = (currentPlayer + 1) % players.length;
   }

@@ -15,14 +15,43 @@ class _HomePageState extends State<HomePage> {
   List<String> allPlayers = [];
   List<String> selectedPlayers = [];
   final TextEditingController _controller = TextEditingController();
+  String selectedMainMode = 'X01';
+  String? selectedSubMode; // For sub-modes like X01/Cricket
   int selectedStartingScore = 301;
-  String selectedGameMode = 'X01';
-  final List<Map<String, dynamic>> gameModes = [
-    {'id': 'X01', 'label': 'X01 (301/501/701/901)', 'scores': [101, 201, 301, 501, 701, 901]},
-    {'id': 'Cricket', 'label': 'Cricket', 'desc': 'Hit 15-20 and Bull three times each. Score points until all players close a number.'},
-    {'id': 'CutThroat', 'label': 'Cut-throat Cricket', 'desc': 'Same as Cricket, but points are added to opponents who haven\'t closed the number.'},
-    {'id': 'Shangai', 'label': 'Shangai', 'desc': '7 rounds, each round targets a number. Score by hitting S/D/T. Win by highest score or Shangai (S+D+T in one round).'},
-    {'id': 'AroundClock', 'label': 'Around the Clock', 'desc': 'Hit numbers 1-20 and Bull in order. Win by closing all targets.'},
+
+  final List<Map<String, dynamic>> groupedGameModes = [
+    {
+      'id': 'X01',
+      'label': 'X01',
+      'desc': 'Reduce score to zero, finish on double.',
+      'subModes': [
+        {'id': '101', 'label': '101', 'score': 101},
+        {'id': '201', 'label': '201', 'score': 201},
+        {'id': '301', 'label': '301', 'score': 301},
+        {'id': '501', 'label': '501', 'score': 501},
+        {'id': '701', 'label': '701', 'score': 701},
+        {'id': '901', 'label': '901', 'score': 901},
+      ],
+    },
+    {
+      'id': 'Cricket',
+      'label': 'Cricket',
+      'desc': 'Hit 15-20 and Bull three times each. Score points until all players close a number.',
+      'subModes': [
+        {'id': 'Cricket', 'label': 'Cricket', 'desc': 'Standard Cricket'},
+        {'id': 'CutThroat', 'label': 'Cut-throat Cricket', 'desc': 'Points are added to opponents who haven\'t closed the number.'},
+      ],
+    },
+    {
+      'id': 'Shangai',
+      'label': 'Shangai',
+      'desc': '7 rounds, each round targets a number. Score by hitting S/D/T. Win by highest score or Shangai (S+D+T in one round).',
+    },
+    {
+      'id': 'AroundClock',
+      'label': 'Around the Clock',
+      'desc': 'Hit numbers 1-20 and Bull in order. Win by closing all targets.',
+    },
   ];
 
   @override
@@ -65,13 +94,23 @@ class _HomePageState extends State<HomePage> {
 
   void _startGame() {
     if (selectedPlayers.isNotEmpty) {
+      String gameModeToPass;
+      int startingScoreToPass = 0;
+      if (selectedMainMode == 'X01') {
+        gameModeToPass = 'X01';
+        startingScoreToPass = int.tryParse(selectedSubMode ?? '301') ?? 301;
+      } else if (selectedMainMode == 'Cricket') {
+        gameModeToPass = selectedSubMode ?? 'Cricket';
+      } else {
+        gameModeToPass = selectedMainMode;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => GamePage(
             players: selectedPlayers,
-            startingScore: selectedGameMode == 'X01' ? selectedStartingScore : 0,
-            gameMode: selectedGameMode,
+            startingScore: startingScoreToPass,
+            gameMode: gameModeToPass,
           ),
         ),
       );
@@ -137,6 +176,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final mainMode = groupedGameModes.firstWhere((m) => m['id'] == selectedMainMode);
+    final hasSubModes = mainMode['subModes'] != null;
+    final subModes = hasSubModes ? List<Map<String, dynamic>>.from(mainMode['subModes']) : null;
     return Scaffold(
       appBar: AppBar(
         title: Text('Dart Scoreboard'),
@@ -163,7 +205,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: selectedGameMode,
+                    value: selectedMainMode,
                     decoration: InputDecoration(
                       labelText: 'Game Mode',
                       prefixIcon: Icon(Icons.sports_score),
@@ -175,11 +217,14 @@ class _HomePageState extends State<HomePage> {
                     dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
                     onChanged: (value) {
                       if (value != null) {
-                        setState(() => selectedGameMode = value);
-                        if (value == 'X01') selectedStartingScore = 301;
+                        setState(() {
+                          selectedMainMode = value;
+                          selectedSubMode = null;
+                          if (value == 'X01') selectedSubMode = '301';
+                        });
                       }
                     },
-                    items: gameModes.map((mode) => DropdownMenuItem<String>(
+                    items: groupedGameModes.map((mode) => DropdownMenuItem<String>(
                       value: mode['id'],
                       child: Text(mode['label'], style: GoogleFonts.montserrat(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)),
                     )).toList(),
@@ -189,12 +234,16 @@ class _HomePageState extends State<HomePage> {
                   icon: Icon(Icons.info_outline),
                   tooltip: 'Game Mode Info',
                   onPressed: () {
-                    final mode = gameModes.firstWhere((m) => m['id'] == selectedGameMode);
+                    String desc = mainMode['desc'] ?? '';
+                    if (hasSubModes && selectedSubMode != null) {
+                      final sub = subModes!.firstWhere((s) => s['id'] == selectedSubMode, orElse: () => {});
+                      desc = sub['desc'] ?? desc;
+                    }
                     showDialog(
                       context: context,
                       builder: (_) => AlertDialog(
-                        title: Text(mode['label']),
-                        content: Text(mode['desc'] ?? 'X01: Reduce score to zero, finish on double.'),
+                        title: Text(mainMode['label'] + (hasSubModes && selectedSubMode != null ? ' - ' + (subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label']) : '')),
+                        content: Text(desc),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -207,14 +256,14 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            if (selectedGameMode == 'X01')
+            if (hasSubModes)
               Padding(
                 padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-                child: DropdownButtonFormField<int>(
-                  value: selectedStartingScore,
+                child: DropdownButtonFormField<String>(
+                  value: selectedSubMode ?? subModes![0]['id'],
                   decoration: InputDecoration(
-                    labelText: 'Starting Score',
-                    prefixIcon: Icon(Icons.score),
+                    labelText: mainMode['id'] == 'X01' ? 'Starting Score' : 'Sub Mode',
+                    prefixIcon: mainMode['id'] == 'X01' ? Icon(Icons.score) : Icon(Icons.category),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                     filled: true,
                     fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
@@ -222,11 +271,18 @@ class _HomePageState extends State<HomePage> {
                   style: GoogleFonts.montserrat(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
                   dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
                   onChanged: (value) {
-                    if (value != null) setState(() => selectedStartingScore = value);
+                    if (value != null) {
+                      setState(() {
+                        selectedSubMode = value;
+                        if (mainMode['id'] == 'X01') {
+                          selectedStartingScore = int.tryParse(value) ?? 301;
+                        }
+                      });
+                    }
                   },
-                  items: (gameModes.firstWhere((m) => m['id'] == 'X01')['scores'] as List<int>).map((score) => DropdownMenuItem<int>(
-                    value: score,
-                    child: Text(score.toString(), style: GoogleFonts.montserrat()),
+                  items: subModes!.map((sub) => DropdownMenuItem<String>(
+                    value: sub['id'],
+                    child: Text(sub['label'], style: GoogleFonts.montserrat()),
                   )).toList(),
                 ),
               ),
@@ -326,9 +382,9 @@ class _HomePageState extends State<HomePage> {
             onPressed: _startGame,
             icon: Icon(Icons.play_arrow),
             label: Text(
-              selectedGameMode == 'X01'
-                  ? 'Start Game ($selectedStartingScore)'
-                  : 'Start Game (${gameModes.firstWhere((m) => m['id'] == selectedGameMode)['label']})',
+              hasSubModes
+                  ? 'Start Game (' + mainMode['label'] + (selectedSubMode != null ? ' - ' + (subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label']) : '') + ')'
+                  : 'Start Game (' + mainMode['label'] + ')',
               style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
             ),
             style: FilledButton.styleFrom(

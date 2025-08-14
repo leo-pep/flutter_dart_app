@@ -531,44 +531,52 @@ class _GamePageState extends State<GamePage> {
       );
     }
     if (widget.gameMode == 'AroundClock') {
-      // Around the clock input: <target> or Miss, continue to next target if darts remain
       int playerTarget = aroundClockGame!.targets[currentPlayer];
       String targetLabel = aroundClockGame!.targetLabel(playerTarget);
       List<String> buttons = [targetLabel, 'Miss'];
       return Column(
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: buttons.map((b) => ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  aroundClockGame!.currentTurn.add({'target': b});
-                  aroundClockGame!.dartsLeft--;
-                  if (b == targetLabel) {
-                    aroundClockGame!.hits[currentPlayer].add(playerTarget);
-                    aroundClockGame!.targets[currentPlayer]++;
-                    if (aroundClockGame!.targets[currentPlayer] > 22) aroundClockGame!.targets[currentPlayer] = 22; // DBull is last
-                  }
-                  // End turn after 3 darts or if player finished
-                  if (aroundClockGame!.dartsLeft == 0 || aroundClockGame!.targets[currentPlayer] > 22) {
-                    // Check win condition
-                    if (aroundClockGame!.targets[currentPlayer] > 22) {
-                      _showWinnerDialog(widget.players[currentPlayer]);
-                      return;
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: buttons.map((b) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: b == 'Miss' ? Colors.redAccent.shade100 : Colors.lightBlueAccent.shade100,
+                  foregroundColor: Colors.black,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  textStyle: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.w600),
+                  padding: EdgeInsets.symmetric(vertical: 14, horizontal: 28),
+                  minimumSize: Size(80, 48),
+                ),
+                onPressed: () {
+                  setState(() {
+                    aroundClockGame!.currentTurn.add({'target': b});
+                    aroundClockGame!.dartsLeft--;
+                    if (b == targetLabel) {
+                      aroundClockGame!.hits[currentPlayer].add(playerTarget);
+                      aroundClockGame!.targets[currentPlayer]++;
+                      if (aroundClockGame!.targets[currentPlayer] > 22) aroundClockGame!.targets[currentPlayer] = 22;
                     }
-                    // Next player turn
-                    aroundClockGame!.currentTurn.clear();
-                    aroundClockGame!.dartsLeft = 3;
-                    currentPlayer = (currentPlayer + 1) % widget.players.length;
-                  }
-                });
-              },
-              child: Text(b),
+                    if (aroundClockGame!.dartsLeft == 0 || aroundClockGame!.targets[currentPlayer] > 22) {
+                      if (aroundClockGame!.targets[currentPlayer] > 22) {
+                        _showWinnerDialog(widget.players[currentPlayer]);
+                        return;
+                      }
+                      aroundClockGame!.currentTurn.clear();
+                      aroundClockGame!.dartsLeft = 3;
+                      currentPlayer = (currentPlayer + 1) % widget.players.length;
+                    }
+                  });
+                },
+                child: Text(b),
+              ),
             )).toList(),
           ),
-          SizedBox(height: 8),
-          Text('Current turn: ${aroundClockGame!.currentTurn.map((d) => d['target']).join(', ')}'),
+          SizedBox(height: 10),
+          Text('Current turn:  ${aroundClockGame!.currentTurn.map((d) => d['target']).join(', ')}',
+            style: GoogleFonts.montserrat(fontSize: 18, color: Colors.black87)),
         ],
       );
     }
@@ -1190,42 +1198,47 @@ class _GamePageState extends State<GamePage> {
       List<String> buttons = [targetLabel, 'Miss'];
       return Column(
         children: [
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 2.2,
-            children: buttons.map((b) => ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  aroundClockGame!.currentTurn.add({'target': b});
-                  aroundClockGame!.dartsLeft--;
-                  if (b == targetLabel) {
-                    aroundClockGame!.hits[currentPlayer].add(playerTarget);
-                    aroundClockGame!.targets[currentPlayer]++;
-                    if (aroundClockGame!.targets[currentPlayer] > 22) aroundClockGame!.targets[currentPlayer] = 22; // DBull is last
-                  }
-                  // End turn after 3 darts or if player finished
-                  if (aroundClockGame!.dartsLeft == 0 || aroundClockGame!.targets[currentPlayer] > 22) {
-                    // Check win condition
-                    if (aroundClockGame!.targets[currentPlayer] > 22) {
-                      _showWinnerDialog(widget.players[currentPlayer]);
-                      return;
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: buttons.map((b) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: b == 'Miss' ? Colors.redAccent.shade100 : Colors.lightBlueAccent.shade100,
+                  foregroundColor: Colors.black,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  textStyle: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.w600),
+                  padding: EdgeInsets.symmetric(vertical: 14, horizontal: 28),
+                  minimumSize: Size(80, 48),
+                ),
+                onPressed: () {
+                  setState(() {
+                    aroundClockGame!.currentTurn.add({'target': b});
+                    aroundClockGame!.dartsLeft--;
+                    if (b == targetLabel) {
+                      aroundClockGame!.hits[currentPlayer].add(playerTarget);
+                      aroundClockGame!.targets[currentPlayer]++;
+                      if (aroundClockGame!.targets[currentPlayer] > 22) aroundClockGame!.targets[currentPlayer] = 22;
                     }
-                    // Next player turn
-                    aroundClockGame!.currentTurn.clear();
-                    aroundClockGame!.dartsLeft = 3;
-                    currentPlayer = (currentPlayer + 1) % widget.players.length;
-                  }
-                });
-              },
-              child: Text(b),
+                    if (aroundClockGame!.dartsLeft == 0 || aroundClockGame!.targets[currentPlayer] > 22) {
+                      if (aroundClockGame!.targets[currentPlayer] > 22) {
+                        _showWinnerDialog(widget.players[currentPlayer]);
+                        return;
+                      }
+                      aroundClockGame!.currentTurn.clear();
+                      aroundClockGame!.dartsLeft = 3;
+                      currentPlayer = (currentPlayer + 1) % widget.players.length;
+                    }
+                  });
+                },
+                child: Text(b),
+              ),
             )).toList(),
           ),
-          SizedBox(height: 8),
-          Text('Current turn: ${aroundClockGame!.currentTurn.map((d) => d['target']).join(', ')}'),
+          SizedBox(height: 10),
+          Text('Current turn:  ${aroundClockGame!.currentTurn.map((d) => d['target']).join(', ')}',
+            style: GoogleFonts.montserrat(fontSize: 18, color: Colors.black87)),
         ],
       );
     }

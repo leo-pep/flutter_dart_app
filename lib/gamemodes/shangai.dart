@@ -10,6 +10,7 @@ class ShangaiGame {
   }
 
   void addDart(String type) {
+    if (currentTurn.length >= 3) return;
     currentTurn.add({'type': type});
   }
 

@@ -312,7 +312,7 @@ class _GamePageState extends State<GamePage> {
             spacing: 8,
             runSpacing: 8,
             children: buttons.map((b) => ElevatedButton(
-              onPressed: () {
+              onPressed: cricketGame!.currentTurn.length >= 3 ? null : () {
                 setState(() {
                   cricketGame!.currentTurn.add({'target': b, 'mult': 1});
                 });
@@ -404,7 +404,7 @@ class _GamePageState extends State<GamePage> {
             spacing: 8,
             runSpacing: 8,
             children: buttons.map((b) => ElevatedButton(
-              onPressed: () {
+              onPressed: shangaiGame!.currentTurn.length >= 3 ? null : () {
                 setState(() {
                   shangaiGame!.currentTurn.add({'type': b});
                 });
@@ -909,7 +909,7 @@ class _GamePageState extends State<GamePage> {
                 textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
                 padding: EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: () {
+              onPressed: cricketGame!.currentTurn.length >= 3 ? null : () {
                 setState(() {
                   cricketGame!.currentTurn.add({'target': b, 'mult': 1});
                 });
@@ -1027,7 +1027,7 @@ class _GamePageState extends State<GamePage> {
                 textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
                 padding: EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: () {
+              onPressed: shangaiGame!.currentTurn.length >= 3 ? null : () {
                 setState(() {
                   shangaiGame!.currentTurn.add({'type': b});
                 });

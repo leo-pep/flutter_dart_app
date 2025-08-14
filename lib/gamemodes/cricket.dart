@@ -15,6 +15,7 @@ class CricketGame {
   }
 
   void addDart(String target, {int mult = 1}) {
+    if (currentTurn.length >= 3) return;
     currentTurn.add({'target': target, 'mult': mult});
   }
 

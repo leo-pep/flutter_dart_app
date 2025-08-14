@@ -36,20 +36,42 @@ class _HomePageState extends State<HomePage> {
     {
       'id': 'Cricket',
       'label': 'Cricket',
-      'desc': 'Hit 15-20 and Bull three times each. Score points until all players close a number.',
+      'desc':
+          'Hit 15-20 and Bull three times each. Score points until all players close a number.',
       'subModes': [
         {'id': 'Cricket', 'label': 'Cricket', 'desc': 'Standard Cricket'},
-        {'id': 'CutThroat', 'label': 'Cut-throat Cricket', 'desc': 'Points are added to opponents who haven\'t closed the number.'},
+        {
+          'id': 'CutThroat',
+          'label': 'Cut-throat Cricket',
+          'desc':
+              'Points are added to opponents who haven\'t closed the number.',
+        },
       ],
     },
     {
       'id': 'Shangai',
       'label': 'Shangai',
-      'desc': 'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.',
+      'desc':
+          'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.',
       'subModes': [
-        {'id': 'Shangai7', 'label': 'Shangai 7', 'desc': 'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.'},
-        {'id': 'Shangai20', 'label': 'Shangai 20', 'desc': 'Shangai from 1 to 20.\nA Shangai is Single, Double and Triple on the target in any order.'},
-        {'id': 'ShangaiBull', 'label': 'Shangai Bull', 'desc': 'Shangai from 1 to the Bull. No Shangai possible on last round.\nA Shangai is Single, Double and Triple on the target in any order.'},
+        {
+          'id': 'Shangai7',
+          'label': 'Shangai 7',
+          'desc':
+              'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.',
+        },
+        {
+          'id': 'Shangai20',
+          'label': 'Shangai 20',
+          'desc':
+              'Shangai from 1 to 20.\nA Shangai is Single, Double and Triple on the target in any order.',
+        },
+        {
+          'id': 'ShangaiBull',
+          'label': 'Shangai Bull',
+          'desc':
+              'Shangai from 1 to the Bull. No Shangai possible on last round.\nA Shangai is Single, Double and Triple on the target in any order.',
+        },
       ],
     },
     {
@@ -134,7 +156,9 @@ class _HomePageState extends State<HomePage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
@@ -145,7 +169,13 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Add Player', style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(
+                'Add Player',
+                style: GoogleFonts.montserrat(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _controller,
@@ -171,8 +201,13 @@ class _HomePageState extends State<HomePage> {
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    textStyle: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: Text('Add'),
                 ),
@@ -187,9 +222,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final mainMode = groupedGameModes.firstWhere((m) => m['id'] == selectedMainMode);
+    final mainMode = groupedGameModes.firstWhere(
+      (m) => m['id'] == selectedMainMode,
+    );
     final hasSubModes = mainMode['subModes'] != null;
-    final subModes = hasSubModes ? List<Map<String, dynamic>>.from(mainMode['subModes']) : null;
+    final subModes = hasSubModes
+        ? List<Map<String, dynamic>>.from(mainMode['subModes'])
+        : null;
     return Scaffold(
       appBar: AppBar(
         title: Text('Dart Scoreboard'),
@@ -220,12 +259,24 @@ class _HomePageState extends State<HomePage> {
                     decoration: InputDecoration(
                       labelText: 'Game Mode',
                       prefixIcon: Icon(Icons.sports_score),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       filled: true,
-                      fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
+                      fillColor: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF23272F)
+                          : Colors.white,
                     ),
-                    style: GoogleFonts.montserrat(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
-                    dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 18,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black,
+                    ),
+                    dropdownColor:
+                        Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF23272F)
+                        : Colors.white,
                     onChanged: (value) {
                       if (value != null) {
                         setState(() {
@@ -235,10 +286,23 @@ class _HomePageState extends State<HomePage> {
                         });
                       }
                     },
-                    items: groupedGameModes.map((mode) => DropdownMenuItem<String>(
-                      value: mode['id'],
-                      child: Text(mode['label'], style: GoogleFonts.montserrat(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)),
-                    )).toList(),
+                    items: groupedGameModes
+                        .map(
+                          (mode) => DropdownMenuItem<String>(
+                            value: mode['id'],
+                            child: Text(
+                              mode['label'],
+                              style: GoogleFonts.montserrat(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
                 IconButton(
@@ -247,13 +311,18 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () {
                     String desc = mainMode['desc'] ?? '';
                     if (hasSubModes && selectedSubMode != null) {
-                      final sub = subModes!.firstWhere((s) => s['id'] == selectedSubMode, orElse: () => {});
+                      final sub = subModes!.firstWhere(
+                        (s) => s['id'] == selectedSubMode,
+                        orElse: () => {},
+                      );
                       desc = sub['desc'] ?? desc;
                     }
                     showDialog(
                       context: context,
                       builder: (_) => AlertDialog(
-                        title: Text(mainMode['label'] + (hasSubModes && selectedSubMode != null ? ' - ' + (subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label']) : '')),
+                        title: Text(
+                          '${mainMode['label']}${hasSubModes && selectedSubMode != null ? ' - ${subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label']}' : ''}',
+                        ),
                         content: Text(desc),
                         actions: [
                           TextButton(
@@ -273,14 +342,29 @@ class _HomePageState extends State<HomePage> {
                 child: DropdownButtonFormField<String>(
                   value: selectedSubMode ?? subModes![0]['id'],
                   decoration: InputDecoration(
-                    labelText: mainMode['id'] == 'X01' ? 'Starting Score' : 'Sub Mode',
-                    prefixIcon: mainMode['id'] == 'X01' ? Icon(Icons.score) : Icon(Icons.category),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    labelText: mainMode['id'] == 'X01'
+                        ? 'Starting Score'
+                        : 'Sub Mode',
+                    prefixIcon: mainMode['id'] == 'X01'
+                        ? Icon(Icons.score)
+                        : Icon(Icons.category),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
+                    fillColor: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF23272F)
+                        : Colors.white,
                   ),
-                  style: GoogleFonts.montserrat(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black),
-                  dropdownColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F) : Colors.white,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 18,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                  dropdownColor: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF23272F)
+                      : Colors.white,
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
@@ -291,10 +375,17 @@ class _HomePageState extends State<HomePage> {
                       });
                     }
                   },
-                  items: subModes!.map((sub) => DropdownMenuItem<String>(
-                    value: sub['id'],
-                    child: Text(sub['label'], style: GoogleFonts.montserrat()),
-                  )).toList(),
+                  items: subModes!
+                      .map(
+                        (sub) => DropdownMenuItem<String>(
+                          value: sub['id'],
+                          child: Text(
+                            sub['label'],
+                            style: GoogleFonts.montserrat(),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             const SizedBox(height: 24),
@@ -302,7 +393,13 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Select Players:', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(
+                    'Select Players:',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                   Expanded(
                     child: ListView.builder(
                       itemCount: allPlayers.length,
@@ -311,11 +408,16 @@ class _HomePageState extends State<HomePage> {
                         final selected = selectedPlayers.contains(p);
                         return CheckboxListTile(
                           value: selected,
-                          title: Text(p, style: GoogleFonts.montserrat(fontSize: 18)),
+                          title: Text(
+                            p,
+                            style: GoogleFonts.montserrat(fontSize: 18),
+                          ),
                           onChanged: (val) {
                             setState(() {
                               if (val == true) {
-                                if (!selectedPlayers.contains(p)) selectedPlayers.add(p);
+                                if (!selectedPlayers.contains(p)) {
+                                  selectedPlayers.add(p);
+                                }
                               } else {
                                 selectedPlayers.remove(p);
                               }
@@ -329,7 +431,10 @@ class _HomePageState extends State<HomePage> {
                     Center(
                       child: Text(
                         'No players yet. Add one!',
-                        style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
+                        style: GoogleFonts.montserrat(
+                          color: colorScheme.outline,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                 ],
@@ -339,38 +444,68 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: selectedPlayers.isEmpty
                   ? Center(
-                child: Text(
-                  'No players selected.',
-                  style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
-                ),
-              )
-                  : ListView.builder(
-                itemCount: selectedPlayers.length,
-                itemBuilder: (context, index) {
-                  final p = selectedPlayers[index];
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.7),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: colorScheme.primaryContainer,
-                          child: Text(p[0].toUpperCase(), style: GoogleFonts.montserrat(color: colorScheme.primary, fontWeight: FontWeight.bold)),
-                        ),
-                        title: Text(p, style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                          onPressed: () => _removePlayer(p),
-                          tooltip: 'Remove',
+                      child: Text(
+                        'No players selected.',
+                        style: GoogleFonts.montserrat(
+                          color: colorScheme.outline,
+                          fontSize: 18,
                         ),
                       ),
+                    )
+                  : ListView.builder(
+                      itemCount: selectedPlayers.length,
+                      itemBuilder: (context, index) {
+                        final p = selectedPlayers[index];
+                        return AnimatedContainer(
+                          duration: Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          child: Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(
+                                    0xFF23272F,
+                                  ).withValues(alpha: 0.85)
+                                : Colors.white.withValues(alpha: 0.7),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: colorScheme.primaryContainer,
+                                child: Text(
+                                  p[0].toUpperCase(),
+                                  style: GoogleFonts.montserrat(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                p,
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  color: colorScheme.error,
+                                ),
+                                onPressed: () => _removePlayer(p),
+                                tooltip: 'Remove',
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
@@ -378,7 +513,10 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddPlayerDialog,
         icon: Icon(Icons.person_add),
-        label: Text('Add Player', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+        label: Text(
+          'Add Player',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -394,14 +532,19 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.play_arrow),
             label: Text(
               hasSubModes && selectedSubMode != null
-                  ? 'Start Game (' + subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label'] + ')'
-                  : 'Start Game (' + mainMode['label'] +')',
+                  ? 'Start Game (${subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label']})'
+                  : 'Start Game (${mainMode['label']})',
               style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
             ),
             style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
+              textStyle: GoogleFonts.montserrat(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),

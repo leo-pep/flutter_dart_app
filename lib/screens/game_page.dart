@@ -434,11 +434,11 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ' + cricketGame!.currentTurn.map((d) {
-            if (d['mult'] == 2) return 'd'+d['target'].toString();
-            if (d['mult'] == 3) return 't'+d['target'].toString();
+          Text('Current turn: ${cricketGame!.currentTurn.map((d) {
+            if (d['mult'] == 2) return 'd${d['target']}';
+            if (d['mult'] == 3) return 't${d['target']}';
             return d['target'].toString();
-          }).join(', ')),
+          }).join(', ')}'),
         ],
       );
     }
@@ -568,7 +568,7 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ' + shangaiGame!.currentTurn.map((d) => d['type']).join(', ')),
+          Text('Current turn: ${shangaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
         ],
       );
     }
@@ -1110,11 +1110,11 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ' + cricketGame!.currentTurn.map((d) {
-            if (d['mult'] == 2) return 'd'+d['target'].toString();
-            if (d['mult'] == 3) return 't'+d['target'].toString();
+          Text('Current turn: ${cricketGame!.currentTurn.map((d) {
+            if (d['mult'] == 2) return 'd${d['target']}';
+            if (d['mult'] == 3) return 't${d['target']}';
             return d['target'].toString();
-          }).join(', ')),
+          }).join(', ')}'),
         ],
       );
     }
@@ -1243,7 +1243,7 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ' + shangaiGame!.currentTurn.map((d) => d['type']).join(', ')),
+          Text('Current turn: ${shangaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
         ],
       );
     }

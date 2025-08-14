@@ -47,9 +47,9 @@ class _HomePageState extends State<HomePage> {
       'label': 'Shangai',
       'desc': '7 rounds, each round targets a number. Score by hitting S/D/T. Win by highest score or Shangai (S+D+T in one round).',
       'subModes': [
-        {'id': 'Shangai7', 'label': 'Shangai (1-7)', 'desc': 'Classic Shangai, 7 rounds (1-7).'},
-        {'id': 'Shangai20', 'label': 'Shangai 20', 'desc': 'Shangai from 1 to 20.'},
-        {'id': 'ShangaiBull', 'label': 'Shangai Bull', 'desc': 'Shangai from 1 to 20, then Bull. No Shangai possible on Bull round.'},
+        {'id': 'Shangai7', 'label': 'Shangai 7', 'desc': 'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.'},
+        {'id': 'Shangai20', 'label': 'Shangai 20', 'desc': 'Shangai from 1 to 20.\nA Shangai is Single, Double and Triple on the target in any order.'},
+        {'id': 'ShangaiBull', 'label': 'Shangai Bull', 'desc': 'Shangai from 1 to the Bull. No Shangai possible on last round.\nA Shangai is Single, Double and Triple on the target in any order.'},
       ],
     },
     {
@@ -393,9 +393,9 @@ class _HomePageState extends State<HomePage> {
             onPressed: _startGame,
             icon: Icon(Icons.play_arrow),
             label: Text(
-              hasSubModes
-                  ? 'Start Game (' + mainMode['label'] + (selectedSubMode != null ? ' - ' + (subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label']) : '') + ')'
-                  : 'Start Game (' + mainMode['label'] + ')',
+              hasSubModes && selectedSubMode != null
+                  ? 'Start Game (' + subModes!.firstWhere((s) => s['id'] == selectedSubMode)['label'] + ')'
+                  : 'Start Game (' + mainMode['label'] +')',
               style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
             ),
             style: FilledButton.styleFrom(

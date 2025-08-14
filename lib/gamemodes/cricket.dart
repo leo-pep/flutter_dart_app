@@ -1,7 +1,7 @@
 class CricketGame {
   final List<String> players;
   final bool isCutThroat;
-  final List<String> cricketTargets = ['15', '16', '17', '18', '19', '20', 'Bull', 'DBull'];
+  final List<String> cricketTargets = ['15', '16', '17', '18', '19', '20', 'Bull'];
   late Map<String, List<int>> cricketHits;
   late List<int> cricketPoints;
   late List<List<Map<String, dynamic>>> turnHistory;
@@ -39,7 +39,7 @@ class CricketGame {
             if (i != currentPlayer && (cricketHits[t]?[i] ?? 0) < 3) others++;
           }
           if (others > 0) {
-            int points = (t == 'Bull' ? 25 : t == 'DBull' ? 50 : int.tryParse(t) ?? 0) * extra;
+            int points = (t == 'Bull' ? 25 : int.tryParse(t) ?? 0) * extra;
             if (!isCutThroat) {
               cricketPoints[currentPlayer] += points;
             } else {

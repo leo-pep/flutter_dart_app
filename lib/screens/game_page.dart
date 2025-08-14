@@ -299,25 +299,68 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
+  Future<void> _showDoubleTripleDialog(String target) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Choose Multiplier for $target'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop('double'),
+            child: Text('Double'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop('triple'),
+            child: Text('Triple'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop('cancel'),
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (result == 'double') {
+      setState(() {
+        cricketGame!.currentTurn.add({'target': target, 'mult': 2});
+      });
+    } else if (result == 'triple') {
+      setState(() {
+        cricketGame!.currentTurn.add({'target': target, 'mult': 3});
+      });
+    }
+  }
+
   Widget buildInputUI() {
     if (widget.gameMode == 'X01') {
       return buildNumpadAndButtons();
     }
     if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') {
-      // Cricket input: 15-20, Bull, DBull, Miss, multiple clicks, cancel
+      // Cricket input: 15-20, Bull, Miss, multiple clicks, cancel
       List<String> buttons = [...cricketGame!.targets, 'Miss'];
       return Column(
         children: [
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: buttons.map((b) => ElevatedButton(
-              onPressed: cricketGame!.currentTurn.length >= 3 ? null : () {
-                setState(() {
-                  cricketGame!.currentTurn.add({'target': b, 'mult': 1});
-                });
+            children: buttons.map((b) => GestureDetector(
+              onLongPress: cricketGame!.currentTurn.length >= 3 ? null : () async {
+                if (b == 'Bull') {
+                  setState(() {
+                    cricketGame!.currentTurn.add({'target': b, 'mult': 2});
+                  });
+                } else if (b != 'Miss') {
+                  await _showDoubleTripleDialog(b);
+                }
               },
-              child: Text(b, style: GoogleFonts.montserrat(fontSize: 20)),
+              child: ElevatedButton(
+                onPressed: cricketGame!.currentTurn.length >= 3 ? null : () {
+                  setState(() {
+                    cricketGame!.currentTurn.add({'target': b, 'mult': 1});
+                  });
+                },
+                child: Text(b, style: GoogleFonts.montserrat(fontSize: 20)),
+              ),
             )).toList(),
           ),
           Row(
@@ -353,7 +396,7 @@ class _GamePageState extends State<GamePage> {
                           if (i != currentPlayer && (cricketGame!.hits[t]?[i] ?? 0) < 3) others++;
                         }
                         if (others > 0) {
-                          int points = (t == 'Bull' ? 25 : t == 'DBull' ? 50 : int.tryParse(t) ?? 0) * extra;
+                          int points = (t == 'Bull' ? 25 : int.tryParse(t) ?? 0) * extra;
                           if (widget.gameMode == 'Cricket') {
                             cricketGame!.points[currentPlayer] += points;
                           } else {
@@ -390,7 +433,11 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ${cricketGame!.currentTurn.map((d) => d['target']).join(', ')}'),
+          Text('Current turn: ' + cricketGame!.currentTurn.map((d) {
+            if (d['mult'] == 2) return 'd'+d['target'].toString();
+            if (d['mult'] == 3) return 't'+d['target'].toString();
+            return d['target'].toString();
+          }).join(', ')),
         ],
       );
     }
@@ -900,21 +947,32 @@ class _GamePageState extends State<GamePage> {
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childAspectRatio: 2.2,
-            children: buttons.map((b) => ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.greenAccent,
-                foregroundColor: Colors.white,
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
-                padding: EdgeInsets.symmetric(vertical: 16),
-              ),
-              onPressed: cricketGame!.currentTurn.length >= 3 ? null : () {
-                setState(() {
-                  cricketGame!.currentTurn.add({'target': b, 'mult': 1});
-                });
+            children: buttons.map((b) => GestureDetector(
+              onLongPress: cricketGame!.currentTurn.length >= 3 ? null : () async {
+                if (b == 'Bull') {
+                  setState(() {
+                    cricketGame!.currentTurn.add({'target': b, 'mult': 2});
+                  });
+                } else if (b != 'Miss') {
+                  await _showDoubleTripleDialog(b);
+                }
               },
-              child: Text(b),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.greenAccent,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+                onPressed: cricketGame!.currentTurn.length >= 3 ? null : () {
+                  setState(() {
+                    cricketGame!.currentTurn.add({'target': b, 'mult': 1});
+                  });
+                },
+                child: Text(b),
+              ),
             )).toList(),
           ),
           SizedBox(height: 16),
@@ -965,7 +1023,7 @@ class _GamePageState extends State<GamePage> {
                           if (i != currentPlayer && (cricketGame!.hits[t]?[i] ?? 0) < 3) others++;
                         }
                         if (others > 0) {
-                          int points = (t == 'Bull' ? 25 : t == 'DBull' ? 50 : int.tryParse(t) ?? 0) * extra;
+                          int points = (t == 'Bull' ? 25 : int.tryParse(t) ?? 0) * extra;
                           if (widget.gameMode == 'Cricket') {
                             cricketGame!.points[currentPlayer] += points;
                           } else {
@@ -1002,7 +1060,11 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ' + cricketGame!.currentTurn.map((d) => d['target']).join(', ')),
+          Text('Current turn: ' + cricketGame!.currentTurn.map((d) {
+            if (d['mult'] == 2) return 'd'+d['target'].toString();
+            if (d['mult'] == 3) return 't'+d['target'].toString();
+            return d['target'].toString();
+          }).join(', ')),
         ],
       );
     }

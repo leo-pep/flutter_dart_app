@@ -748,7 +748,7 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
               trailing: Text(
-                '{score} pts',
+                '$score pts',
                 style: GoogleFonts.montserrat(
                   color: isCurrent ? Colors.white : Colors.black,
                   fontWeight: FontWeight.bold,

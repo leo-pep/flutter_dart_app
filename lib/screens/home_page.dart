@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dart_app/l10n/app_localizations.dart';
 import 'game_page.dart';
 import 'stats_page.dart';
 
@@ -84,12 +85,12 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Add Player', style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context)!.addPlayer, style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: _controller,
                 autofocus: true,
-                decoration: InputDecoration(hintText: 'Player name'),
+                decoration: InputDecoration(hintText: AppLocalizations.of(context)!.playerName),
                 style: GoogleFonts.montserrat(fontSize: 18),
                 onSubmitted: (_) {
                   _addPlayer(_controller.text.trim());
@@ -113,7 +114,7 @@ class _HomePageState extends State<HomePage> {
                     textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: Text('Add'),
+                  child: Text(AppLocalizations.of(context)!.add),
                 ),
               ),
             ],
@@ -134,7 +135,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.bar_chart),
-            tooltip: 'Player Stats',
+            tooltip: AppLocalizations.of(context)!.playerStats,
             onPressed: () {
               Navigator.push(
                 context,
@@ -151,7 +152,7 @@ class _HomePageState extends State<HomePage> {
             DropdownButtonFormField<int>(
               value: selectedStartingScore,
               decoration: InputDecoration(
-                labelText: 'Game Mode',
+                labelText: AppLocalizations.of(context)!.gameModeLabel,
                 prefixIcon: Icon(Icons.sports_score),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 filled: true,
@@ -176,7 +177,7 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Select Players:', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(AppLocalizations.of(context)!.selectPlayers, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
                   Expanded(
                     child: ListView.builder(
                       itemCount: allPlayers.length,
@@ -202,7 +203,7 @@ class _HomePageState extends State<HomePage> {
                   if (allPlayers.isEmpty)
                     Center(
                       child: Text(
-                        'No players yet. Add one!',
+                        AppLocalizations.of(context)!.noPlayersYet,
                         style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
                       ),
                     ),
@@ -214,7 +215,7 @@ class _HomePageState extends State<HomePage> {
               child: selectedPlayers.isEmpty
                   ? Center(
                 child: Text(
-                  'No players selected.',
+                  AppLocalizations.of(context)!.noPlayersSelected,
                   style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
                 ),
               )
@@ -238,7 +239,7 @@ class _HomePageState extends State<HomePage> {
                         trailing: IconButton(
                           icon: Icon(Icons.delete_outline, color: colorScheme.error),
                           onPressed: () => _removePlayer(p),
-                          tooltip: 'Remove',
+                          tooltip: AppLocalizations.of(context)!.remove,
                         ),
                       ),
                     ),
@@ -252,7 +253,7 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddPlayerDialog,
         icon: Icon(Icons.person_add),
-        label: Text('Add Player', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+        label: Text(AppLocalizations.of(context)!.addPlayer, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

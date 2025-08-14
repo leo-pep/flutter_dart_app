@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:flutter_dart_app/l10n/app_localizations.dart';
 
 class GamePage extends StatefulWidget {
   final List<String> players;
@@ -38,7 +39,7 @@ class _GamePageState extends State<GamePage> {
     if (value == null || value < 0 || value > 180) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('⚠️ Le score maximum est 180 !'),
+          content: Text(AppLocalizations.of(context)!.maxScoreWarning),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 2),
         ),
@@ -101,14 +102,14 @@ class _GamePageState extends State<GamePage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('🎉 $winner a gagné !'),
+        title: Text(AppLocalizations.of(context)!.winnerDialogTitle(winner)),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context);
             },
-            child: Text('Retour à l\'accueil'),
+            child: Text(AppLocalizations.of(context)!.backToHome),
           )
         ],
       ),
@@ -360,14 +361,14 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
                 subtitle: Text(
-                  'Avg: $avg',
+                  AppLocalizations.of(context)!.averageScore(avg),
                   style: GoogleFonts.montserrat(
                     color: isCurrent ? Colors.white70 : cardText.withValues(alpha: 0.7),
                     fontSize: 16,
                   ),
                 ),
                 trailing: Text(
-                  '${scores[i]} pts',
+                  AppLocalizations.of(context)!.scoreWithPts('${scores[i]}'),
                   style: GoogleFonts.montserrat(
                     color: isCurrent ? Colors.white : cardText,
                     fontWeight: FontWeight.bold,
@@ -384,7 +385,7 @@ class _GamePageState extends State<GamePage> {
     // Show the score being typed above the numpad/buttons
     return Scaffold(
       appBar: AppBar(
-        title: Text('Partie en cours'),
+        title: Text(AppLocalizations.of(context)!.gameInProgress),
         actions: [
           IconButton(
             icon: Icon(Icons.exit_to_app),
@@ -413,7 +414,7 @@ class _GamePageState extends State<GamePage> {
                   boxShadow: [BoxShadow(blurRadius: 8, color: Colors.black12)],
                 ),
                 child: Text(
-                  _scoreController.text.isEmpty ? 'Entrez un score' : _scoreController.text,
+                  _scoreController.text.isEmpty ? AppLocalizations.of(context)!.enterScore : _scoreController.text,
                   style: GoogleFonts.montserrat(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -432,4 +433,3 @@ class _GamePageState extends State<GamePage> {
     );
   }
 }
-

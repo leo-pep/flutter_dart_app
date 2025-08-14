@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:flutter_dart_app/l10n/app_localizations.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -176,7 +177,7 @@ class _StatsPageState extends State<StatsPage> {
       builder: (ctx) {
         final TextEditingController daysController = TextEditingController();
         return AlertDialog(
-          title: Text('Reset Stats for $selectedPlayer'),
+          title: Text(AppLocalizations.of(context)!.resetStatsFor(selectedPlayer!)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -185,14 +186,14 @@ class _StatsPageState extends State<StatsPage> {
                   Navigator.pop(ctx);
                   _resetStats(player: selectedPlayer!);
                 },
-                child: Text('Reset All Stats'),
+                child: Text(AppLocalizations.of(context)!.resetAllStats),
               ),
               ElevatedButton(
                 onPressed: mostPlayedMode == null ? null : () {
                   Navigator.pop(ctx);
                   _resetStats(player: selectedPlayer!, mode: mostPlayedMode);
                 },
-                child: Text('Reset Most Played Game'),
+                child: Text(AppLocalizations.of(context)!.resetMostPlayedGame),
               ),
               Row(
                 children: [
@@ -200,7 +201,7 @@ class _StatsPageState extends State<StatsPage> {
                     child: TextField(
                       controller: daysController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(hintText: 'Days'),
+                      decoration: InputDecoration(hintText: AppLocalizations.of(context)!.daysHint),
                     ),
                   ),
                   ElevatedButton(
@@ -211,7 +212,7 @@ class _StatsPageState extends State<StatsPage> {
                         _resetStats(player: selectedPlayer!, days: days);
                       }
                     },
-                    child: Text('Reset Last X Days'),
+                    child: Text(AppLocalizations.of(context)!.resetLastXDays),
                   ),
                 ],
               ),
@@ -244,7 +245,7 @@ class _StatsPageState extends State<StatsPage> {
       crossAxisCount = 1;
     }
     return Scaffold(
-      appBar: AppBar(title: Text('Player Stats')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.playerStats)),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: SingleChildScrollView(
@@ -253,7 +254,7 @@ class _StatsPageState extends State<StatsPage> {
             children: [
               DropdownButton<String>(
                 value: selectedPlayer,
-                hint: Text('Select a player'),
+                hint: Text(AppLocalizations.of(context)!.selectPlayer),
                 items: allPlayers.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
                 onChanged: (p) {
                   setState(() { selectedPlayer = p; });
@@ -262,9 +263,9 @@ class _StatsPageState extends State<StatsPage> {
               ),
               const SizedBox(height: 24),
               if (selectedPlayer == null)
-                Text('Select a player to view stats.', style: GoogleFonts.montserrat(fontSize: 18)),
+                Text(AppLocalizations.of(context)!.selectPlayer + '.', style: GoogleFonts.montserrat(fontSize: 18)),
               if (selectedPlayer != null && stats == null)
-                Text('No games found for this player.', style: GoogleFonts.montserrat(fontSize: 18)),
+                Text(AppLocalizations.of(context)!.noGamesFound, style: GoogleFonts.montserrat(fontSize: 18)),
               if (stats != null)
                 Card(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -274,18 +275,18 @@ class _StatsPageState extends State<StatsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Global Stats', style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(AppLocalizations.of(context)!.playerStats, style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         Text(selectedPlayer ?? '', style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
-                        Text('Games played: ${stats!['games']}', style: GoogleFonts.montserrat(fontSize: 18)),
-                        Text('Wins: ${stats!['wins']}', style: GoogleFonts.montserrat(fontSize: 18)),
-                        Text('Losses: ${stats!['losses']}', style: GoogleFonts.montserrat(fontSize: 18)),
-                        Text('Global average: ${stats!['avg'].toStringAsFixed(1)}', style: GoogleFonts.montserrat(fontSize: 18)),
-                        Text('W/L ratio: ${(stats!['wl'] * 100).toStringAsFixed(1)}%', style: GoogleFonts.montserrat(fontSize: 18)),
+                        Text(AppLocalizations.of(context)!.gamesPlayed(stats!['games'].toString()), style: GoogleFonts.montserrat(fontSize: 18)),
+                        Text(AppLocalizations.of(context)!.wins(stats!['wins'].toString()), style: GoogleFonts.montserrat(fontSize: 18)),
+                        Text(AppLocalizations.of(context)!.losses(stats!['losses'].toString()), style: GoogleFonts.montserrat(fontSize: 18)),
+                        Text(AppLocalizations.of(context)!.globalAverage(stats!['avg'].toStringAsFixed(1)), style: GoogleFonts.montserrat(fontSize: 18)),
+                        Text(AppLocalizations.of(context)!.wlRatio((stats!['wl'] * 100).toStringAsFixed(1)), style: GoogleFonts.montserrat(fontSize: 18)),
                         const SizedBox(height: 16),
-                        Text('Best average: ${bestAvg?.toStringAsFixed(1) ?? 'N/A'}', style: GoogleFonts.montserrat(fontSize: 18)),
-                        Text('Last played: ${_formatDate(lastPlayed) ?? 'N/A'}', style: GoogleFonts.montserrat(fontSize: 18)),
+                        Text(AppLocalizations.of(context)!.bestAverage(bestAvg?.toStringAsFixed(1) ?? 'N/A'), style: GoogleFonts.montserrat(fontSize: 18)),
+                        Text(AppLocalizations.of(context)!.lastPlayed(_formatDate(lastPlayed) ?? 'N/A'), style: GoogleFonts.montserrat(fontSize: 18)),
                       ],
                     ),
                   ),
@@ -314,18 +315,18 @@ class _StatsPageState extends State<StatsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Game Mode: $mode', style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold)),
+                            Text(AppLocalizations.of(context)!.gameMode(mode.toString()), style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
                             Text(selectedPlayer ?? '', style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 16),
-                            Text('Games played: ${mStats['games']}', style: GoogleFonts.montserrat(fontSize: 18)),
-                            Text('Wins: ${mStats['wins']}', style: GoogleFonts.montserrat(fontSize: 18)),
-                            Text('Losses: ${mStats['losses']}', style: GoogleFonts.montserrat(fontSize: 18)),
-                            Text('Average: ${avg.toStringAsFixed(1)}', style: GoogleFonts.montserrat(fontSize: 18)),
-                            Text('W/L ratio: ${(wl * 100).toStringAsFixed(1)}%', style: GoogleFonts.montserrat(fontSize: 18)),
+                            Text(AppLocalizations.of(context)!.gamesPlayed(mStats['games'].toString()), style: GoogleFonts.montserrat(fontSize: 18)),
+                            Text(AppLocalizations.of(context)!.wins(mStats['wins'].toString()), style: GoogleFonts.montserrat(fontSize: 18)),
+                            Text(AppLocalizations.of(context)!.losses(mStats['losses'].toString()), style: GoogleFonts.montserrat(fontSize: 18)),
+                            Text(AppLocalizations.of(context)!.average(avg.toStringAsFixed(1)), style: GoogleFonts.montserrat(fontSize: 18)),
+                            Text(AppLocalizations.of(context)!.wlRatio((wl * 100).toStringAsFixed(1)), style: GoogleFonts.montserrat(fontSize: 18)),
                             const SizedBox(height: 16),
-                            Text('Best average: ${mStats['bestAvg']?.toStringAsFixed(1) ?? 'N/A'}', style: GoogleFonts.montserrat(fontSize: 18)),
-                            Text('Last played: ${_formatDate(mStats['lastPlayed']) ?? 'N/A'}', style: GoogleFonts.montserrat(fontSize: 18)),
+                            Text(AppLocalizations.of(context)!.bestAverage(mStats['bestAvg']?.toStringAsFixed(1) ?? 'N/A'), style: GoogleFonts.montserrat(fontSize: 18)),
+                            Text(AppLocalizations.of(context)!.lastPlayed(_formatDate(mStats['lastPlayed']) ?? 'N/A'), style: GoogleFonts.montserrat(fontSize: 18)),
                           ],
                         ),
                       ),
@@ -334,7 +335,7 @@ class _StatsPageState extends State<StatsPage> {
                 ),
               ElevatedButton(
                 onPressed: _showResetDialog,
-                child: Text('Reset Stats'),
+                child: Text(AppLocalizations.of(context)!.resetStats),
               ),
             ],
           ),

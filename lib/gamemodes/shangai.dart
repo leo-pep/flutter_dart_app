@@ -68,11 +68,15 @@ class ShangaiGame {
       // Next round or next player
       if (currentPlayer == players.length - 1) {
         if (shangaiRound == maxRound) {
-          // End game, highest score wins
-          int maxScore = 0, winner = 0;
-          for (int i = 0; i < players.length; i++) {
-            int total = shangaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int));
-            if (total > maxScore) { maxScore = total; winner = i; }
+          // End game, highest score wins (AFTER last player's score is added)
+          List<int> totals = List.generate(players.length, (i) => shangaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int)));
+          int maxScore = totals[0];
+          int winner = 0;
+          for (int i = 1; i < players.length; i++) {
+            if (totals[i] > maxScore) {
+              maxScore = totals[i];
+              winner = i;
+            }
           }
           return winner;
         } else {

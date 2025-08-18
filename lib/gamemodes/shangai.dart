@@ -11,7 +11,20 @@ class ShangaiGame {
     shangaiTurns = List.generate(players.length, (_) => []);
     if (mode == 'Shangai20') {
       roundTargets = List.generate(20, (i) => i + 1); // 1-20
-    } else if (mode == 'ShangaiBull') {
+class ShanghaiGame {
+  final List<String> players;
+  final String mode;
+  late List<dynamic> roundTargets;
+  int shanghaiRound = 1;
+  late List<List<Map<String, dynamic>>> shanghaiTurns;
+  int currentPlayer = 0;
+  List<Map<String, dynamic>> currentTurn = [];
+
+  ShanghaiGame({required this.players, this.mode = 'Shanghai7'}) {
+    shanghaiTurns = List.generate(players.length, (_) => []);
+    if (mode == 'Shanghai20') {
+      roundTargets = List.generate(20, (i) => i + 1); // 1-20
+    } else if (mode == 'ShanghaiBull') {
       roundTargets = List<dynamic>.from(List.generate(20, (i) => i + 1)) + ['Bull']; // 1-20, then Bull
     } else {
       roundTargets = List.generate(7, (i) => i + 1); // 1-7

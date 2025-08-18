@@ -70,7 +70,28 @@ class _HomePageState extends State<HomePage> {
           'id': 'ShangaiBull',
           'label': 'Shangai Bull',
           'desc':
-              'Shangai from 1 to the Bull. No Shangai possible on last round.\nA Shangai is Single, Double and Triple on the target in any order.',
+      'id': 'Shanghai',
+      'label': 'Shanghai',
+      'desc':
+          'Classic Shanghai, 7 rounds (1-7). Highest score wins if no Shanghai has been done.\nA Shanghai is Single, Double and Triple on the target in any order.',
+      'subModes': [
+        {
+          'id': 'Shanghai7',
+          'label': 'Shanghai 7',
+          'desc':
+              'Classic Shanghai, 7 rounds (1-7). Highest score wins if no Shanghai has been done.\nA Shanghai is Single, Double and Triple on the target in any order.',
+        },
+        {
+          'id': 'Shanghai20',
+          'label': 'Shanghai 20',
+          'desc':
+              'Shanghai from 1 to 20.\nA Shanghai is Single, Double and Triple on the target in any order.',
+        },
+        {
+          'id': 'ShanghaiBull',
+          'label': 'Shanghai Bull',
+          'desc':
+              'Shanghai from 1 to the Bull. No Shanghai possible on last round.\nA Shanghai is Single, Double and Triple on the target in any order.',
         },
       ],
     },

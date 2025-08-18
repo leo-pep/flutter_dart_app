@@ -152,7 +152,9 @@ class _HomePageState extends State<HomePage> {
         gameModeToPass = selectedSubMode ?? 'Cricket';
       } else if (selectedMainMode == 'Shangai') {
         gameModeToPass = 'Shangai';
-        extraArgs = {'shangaiMode': selectedSubMode ?? 'Shangai7'};
+      } else if (selectedMainMode == 'Shanghai') {
+        gameModeToPass = 'Shanghai';
+        extraArgs = {'shanghaiMode': selectedSubMode ?? 'Shanghai7'};
       } else {
         gameModeToPass = selectedMainMode;
       }

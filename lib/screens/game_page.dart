@@ -43,7 +43,8 @@ class _GamePageState extends State<GamePage> {
       );
     }
     if (widget.gameMode == 'Shangai') {
-      shangaiGame = ShangaiGame(players: widget.players, mode: widget.shangaiMode ?? 'Shangai7');
+    if (widget.gameMode == 'Shanghai') {
+      shanghaiGame = ShanghaiGame(players: widget.players, mode: widget.shangaiMode ?? 'Shanghai7');
     }
     if (widget.gameMode == 'AroundClock') {
       aroundClockGame = AroundClockGame(players: widget.players);

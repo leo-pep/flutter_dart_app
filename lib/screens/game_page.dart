@@ -1232,7 +1232,7 @@ class _GamePageState extends State<GamePage> {
                           shangaiGame!.shangaiRound++;
                           currentPlayer = 0;
                         });
-                      }
+                      _handleShanghaiEndGame();
                     } else {
                       setState(() {
                         currentPlayer++;

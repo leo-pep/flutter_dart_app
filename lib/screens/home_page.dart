@@ -49,26 +49,26 @@ class _HomePageState extends State<HomePage> {
       ],
     },
     {
-      'id': 'Shangai',
-      'label': 'Shangai',
+      'id': 'Shanghai',
+      'label': 'Shanghai',
       'desc':
-          'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.',
+          'Classic Shanghai, 7 rounds (1-7). Highest score wins if no Shanghai has been done.\nA Shanghai is Single, Double and Triple on the target in any order.',
       'subModes': [
         {
-          'id': 'Shangai7',
-          'label': 'Shangai 7',
+          'id': 'Shanghai7',
+          'label': 'Shanghai 7',
           'desc':
-              'Classic Shangai, 7 rounds (1-7). Highest score wins if no Shangai has been done.\nA Shangai is Single, Double and Triple on the target in any order.',
+              'Classic Shanghai, 7 rounds (1-7). Highest score wins if no Shanghai has been done.\nA Shanghai is Single, Double and Triple on the target in any order.',
         },
         {
-          'id': 'Shangai20',
-          'label': 'Shangai 20',
+          'id': 'Shanghai20',
+          'label': 'Shanghai 20',
           'desc':
-              'Shangai from 1 to 20.\nA Shangai is Single, Double and Triple on the target in any order.',
+              'Shanghai from 1 to 20.\nA Shanghai is Single, Double and Triple on the target in any order.',
         },
         {
-          'id': 'ShangaiBull',
-          'label': 'Shangai Bull',
+          'id': 'ShanghaiBull',
+          'label': 'Shanghai Bull',
           'desc':
       'id': 'Shanghai',
       'label': 'Shanghai',
@@ -150,8 +150,8 @@ class _HomePageState extends State<HomePage> {
         startingScoreToPass = int.tryParse(selectedSubMode ?? '301') ?? 301;
       } else if (selectedMainMode == 'Cricket') {
         gameModeToPass = selectedSubMode ?? 'Cricket';
-      } else if (selectedMainMode == 'Shangai') {
-        gameModeToPass = 'Shangai';
+      } else if (selectedMainMode == 'Shanghai') {
+        gameModeToPass = 'Shanghai';
       } else if (selectedMainMode == 'Shanghai') {
         gameModeToPass = 'Shanghai';
         extraArgs = {'shanghaiMode': selectedSubMode ?? 'Shanghai7'};
@@ -165,8 +165,8 @@ class _HomePageState extends State<HomePage> {
             players: selectedPlayers,
             startingScore: startingScoreToPass,
             gameMode: gameModeToPass,
-            // Pass extraArgs if Shangai
-            shangaiMode: extraArgs != null ? extraArgs['shangaiMode'] : null,
+            // Pass extraArgs if Shanghai
+            shanghaiMode: extraArgs != null ? extraArgs['shanghaiMode'] : null,
           ),
         ),
       );

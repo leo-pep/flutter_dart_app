@@ -1,15 +1,15 @@
-class ShangaiGame {
+class ShanghaiGame {
   final List<String> players;
   final String mode;
   late List<dynamic> roundTargets;
-  int shangaiRound = 1;
-  late List<List<Map<String, dynamic>>> shangaiTurns;
+  int shanghaiRound = 1;
+  late List<List<Map<String, dynamic>>> shanghaiTurns;
   int currentPlayer = 0;
   List<Map<String, dynamic>> currentTurn = [];
 
-  ShangaiGame({required this.players, this.mode = 'Shangai7'}) {
-    shangaiTurns = List.generate(players.length, (_) => []);
-    if (mode == 'Shangai20') {
+  ShanghaiGame({required this.players, this.mode = 'Shanghai7'}) {
+    shanghaiTurns = List.generate(players.length, (_) => []);
+    if (mode == 'Shanghai20') {
       roundTargets = List.generate(20, (i) => i + 1); // 1-20
 class ShanghaiGame {
   final List<String> players;
@@ -32,7 +32,7 @@ class ShanghaiGame {
   }
 
   int get maxRound => roundTargets.length;
-  dynamic get currentTarget => roundTargets[shangaiRound - 1];
+  dynamic get currentTarget => roundTargets[shanghaiRound - 1];
 
   void addDart(String type) {
     if (currentTurn.length >= 3) return;
@@ -46,16 +46,16 @@ class ShanghaiGame {
   /// Returns winner index if game ends, otherwise null
   int? endTurn() {
     int score = 0;
-    bool shangai = false;
+    bool shanghai = false;
     bool s = false, d = false, t = false;
     final target = currentTarget;
     for (var dart in currentTurn) {
       String type = dart['type'];
       if (type == 'Miss') continue;
-      if (type == 'Shangai') {
-        // Only allow Shangai if not Bull round in ShangaiBull mode
-        if (!(mode == 'ShangaiBull' && target == 'Bull')) {
-          shangai = true;
+      if (type == 'Shanghai') {
+        // Only allow Shanghai if not Bull round in ShanghaiBull mode
+        if (!(mode == 'ShanghaiBull' && target == 'Bull')) {
+          shanghai = true;
           s = d = t = true;
           if (target == 'Bull') {
             score = 50 + 75 + 25; // S=25, D=50, T=75
@@ -69,20 +69,20 @@ class ShanghaiGame {
       if (type.startsWith('D')) { score += target == 'Bull' ? 50 : (target is int ? 2 * target : 0); d = true; }
       if (type.startsWith('T')) { score += target == 'Bull' ? 75 : (target is int ? 3 * target : 0); t = true; }
     }
-    // No Shangai possible on Bull round in ShangaiBull mode
-    bool isShangai = shangai || (s && d && t);
-    if (mode == 'ShangaiBull' && target == 'Bull') isShangai = false;
-    shangaiTurns[currentPlayer].add({'turn': List.from(currentTurn), 'score': score, 'shangai': isShangai});
+    // No Shanghai possible on Bull round in ShanghaiBull mode
+    bool isShanghai = shanghai || (s && d && t);
+    if (mode == 'ShanghaiBull' && target == 'Bull') isShanghai = false;
+    shanghaiTurns[currentPlayer].add({'turn': List.from(currentTurn), 'score': score, 'shanghai': isShanghai});
     currentTurn.clear();
     // Check win
-    if (isShangai) {
+    if (isShanghai) {
       return currentPlayer;
     } else {
       // Next round or next player
       if (currentPlayer == players.length - 1) {
-        if (shangaiRound == maxRound) {
+        if (shanghaiRound == maxRound) {
           // End game, highest score wins (AFTER last player's score is added)
-          List<int> totals = List.generate(players.length, (i) => shangaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int)));
+          List<int> totals = List.generate(players.length, (i) => shanghaiTurns[i].fold(0, (a, b) => a + ((b['score'] ?? 0) as int)));
           int maxScore = totals[0];
           int winner = 0;
           for (int i = 1; i < players.length; i++) {
@@ -93,7 +93,7 @@ class ShanghaiGame {
           }
           return winner;
         } else {
-          shangaiRound++;
+          shanghaiRound++;
           currentPlayer = 0;
         }
       } else {
@@ -103,6 +103,6 @@ class ShanghaiGame {
     return null;
   }
 
-  List<List<Map<String, dynamic>>> get turns => shangaiTurns;
-  int get currentRound => shangaiRound;
+  List<List<Map<String, dynamic>>> get turns => shanghaiTurns;
+  int get currentRound => shanghaiRound;
 }

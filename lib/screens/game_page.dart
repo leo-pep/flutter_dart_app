@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../gamemodes/cricket.dart';
-import '../gamemodes/shangai.dart';
+import '../gamemodes/shanghai.dart';
 import '../gamemodes/around_clock.dart';
 import '../gamemodes/x01.dart';
 
@@ -11,9 +11,9 @@ class GamePage extends StatefulWidget {
   final List<String> players;
   final int startingScore;
   final String gameMode;
-  final String? shangaiMode;
+  final String? shanghaiMode;
 
-  const GamePage({super.key, required this.players, required this.startingScore, required this.gameMode, this.shangaiMode});
+  const GamePage({super.key, required this.players, required this.startingScore, required this.gameMode, this.shanghaiMode});
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -27,7 +27,7 @@ class _GamePageState extends State<GamePage> {
 
   // Game mode logic classes
   CricketGame? cricketGame;
-  ShangaiGame? shangaiGame;
+  ShanghaiGame? shanghaiGame;
   AroundClockGame? aroundClockGame;
   X01Game? x01Game;
 
@@ -42,9 +42,8 @@ class _GamePageState extends State<GamePage> {
         isCutThroat: widget.gameMode == 'CutThroat',
       );
     }
-    if (widget.gameMode == 'Shangai') {
     if (widget.gameMode == 'Shanghai') {
-      shanghaiGame = ShanghaiGame(players: widget.players, mode: widget.shangaiMode ?? 'Shanghai7');
+      shanghaiGame = ShanghaiGame(players: widget.players, mode: widget.shanghaiMode ?? 'Shanghai7');
     }
     if (widget.gameMode == 'AroundClock') {
       aroundClockGame = AroundClockGame(players: widget.players);
@@ -229,7 +228,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget buildShangaiTable() {
+  Widget buildShanghaiTable() {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Padding(
@@ -237,23 +236,23 @@ class _GamePageState extends State<GamePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Shangai Progress', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('Shanghai Progress', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
             DataTable(
               columns: [
                 DataColumn(label: Text('Player', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('Score', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Shangai', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Shanghai', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold))),
               ],
               rows: [
                 for (int i = 0; i < widget.players.length; i++)
                   DataRow(cells: [
                     DataCell(Text(widget.players[i], style: GoogleFonts.montserrat())),
                     DataCell(Text(
-                      shangaiGame!.shangaiTurns[i].fold<int>(0, (a, b) => a + ((b['score'] ?? 0) as int)).toString(),
+                      shanghaiGame!.shanghaiTurns[i].fold<int>(0, (a, b) => a + ((b['score'] ?? 0) as int)).toString(),
                       style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                     )),
                     DataCell(Text(
-                      shangaiGame!.shangaiTurns[i].any((b) => b['shangai'] == true) ? '✔' : '',
+                      shanghaiGame!.shanghaiTurns[i].any((b) => b['shanghai'] == true) ? '✔' : '',
                       style: GoogleFonts.montserrat(color: Colors.green, fontWeight: FontWeight.bold),
                     )),
                   ]),
@@ -443,13 +442,13 @@ class _GamePageState extends State<GamePage> {
         ],
       );
     }
-    if (widget.gameMode == 'Shangai') {
-      // Shangai input: S/D/T<target>, Shangai, Miss
-      final target = shangaiGame!.currentTarget;
-      final isBullRound = (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull');
+    if (widget.gameMode == 'Shanghai') {
+      // Shanghai input: S/D/T<target>, Shanghai, Miss
+      final target = shanghaiGame!.currentTarget;
+      final isBullRound = (shanghaiGame!.mode == 'ShanghaiBull' && target == 'Bull');
       final targetLabel = target == 'Bull' ? 'Bull' : target.toString();
       List<String> buttons = [
-        'S$targetLabel', 'D$targetLabel', 'T$targetLabel', 'Shangai', 'Miss'
+        'S$targetLabel', 'D$targetLabel', 'T$targetLabel', 'Shanghai', 'Miss'
       ];
       return Column(
         children: [
@@ -461,7 +460,7 @@ class _GamePageState extends State<GamePage> {
             crossAxisSpacing: 12,
             childAspectRatio: 2.2,
             children: buttons.map((b) {
-              final isShangaiButton = b == 'Shangai';
+              final isShanghaiButton = b == 'Shanghai';
               return ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.deepPurpleAccent,
@@ -471,11 +470,11 @@ class _GamePageState extends State<GamePage> {
                   textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                onPressed: shangaiGame!.currentTurn.length >= 3 || (isShangaiButton && isBullRound)
+                onPressed: shanghaiGame!.currentTurn.length >= 3 || (isShanghaiButton && isBullRound)
                     ? null
                     : () {
                         setState(() {
-                          shangaiGame!.currentTurn.add({'type': b});
+                          shanghaiGame!.currentTurn.add({'type': b});
                         });
                       },
                 child: Text(b),
@@ -496,9 +495,9 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
+                onPressed: shanghaiGame!.currentTurn.isNotEmpty ? () {
                   setState(() {
-                    shangaiGame!.currentTurn.removeLast();
+                    shanghaiGame!.currentTurn.removeLast();
                   });
                 } : null,
               ),
@@ -513,17 +512,17 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
+                onPressed: shanghaiGame!.currentTurn.isNotEmpty ? () {
                   int score = 0;
-                  bool shangai = false;
+                  bool shanghai = false;
                   bool s = false, d = false, t = false;
-                  final target = shangaiGame!.currentTarget;
-                  for (var dart in shangaiGame!.currentTurn) {
+                  final target = shanghaiGame!.currentTarget;
+                  for (var dart in shanghaiGame!.currentTurn) {
                     String type = dart['type'];
                     if (type == 'Miss') continue;
-                    if (type == 'Shangai') {
-                      if (!(shangaiGame!.mode == 'ShangaiBull' && target == 'Bull')) {
-                        shangai = true;
+                    if (type == 'Shanghai') {
+                      if (!(shanghaiGame!.mode == 'ShanghaiBull' && target == 'Bull')) {
+                        shanghai = true;
                         s = d = t = true;
                         if (target == 'Bull') {
                           score = 50 + 75 + 25;
@@ -537,24 +536,24 @@ class _GamePageState extends State<GamePage> {
                     if (type.startsWith('D')) { score += target == 'Bull' ? 50 : (target is int ? 2 * target : 0); d = true; }
                     if (type.startsWith('T')) { score += target == 'Bull' ? 75 : (target is int ? 3 * target : 0); t = true; }
                   }
-                  bool isShangai = shangai || (s && d && t);
-                  if (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull') isShangai = false;
-                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': isShangai});
-                  shangaiGame!.currentTurn.clear();
-                  if (isShangai) {
+                  bool isShanghai = shanghai || (s && d && t);
+                  if (shanghaiGame!.mode == 'ShanghaiBull' && target == 'Bull') isShanghai = false;
+                  shanghaiGame!.turns[currentPlayer].add({'turn': List.from(shanghaiGame!.currentTurn), 'score': score, 'shanghai': isShanghai});
+                  shanghaiGame!.currentTurn.clear();
+                  if (isShanghai) {
                     _showWinnerDialog(widget.players[currentPlayer]);
                   } else {
                     if (currentPlayer == widget.players.length - 1) {
-                      if (shangaiGame!.currentRound == shangaiGame!.maxRound) {
+                      if (shanghaiGame!.currentRound == shanghaiGame!.maxRound) {
                         int maxScore = 0, winner = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + (((b['score'] ?? 0) as num).toInt()));
+                          int total = shanghaiGame!.turns[i].fold(0, (a, b) => a + (((b['score'] ?? 0) as num).toInt()));
                           if (total > maxScore) { maxScore = total; winner = i; }
                         }
                         _showWinnerDialog(widget.players[winner]);
                       } else {
                         setState(() {
-                          shangaiGame!.shangaiRound++;
+                          shanghaiGame!.shanghaiRound++;
                           currentPlayer = 0;
                         });
                       }
@@ -569,7 +568,7 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ${shangaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
+          Text('Current turn: ${shanghaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
         ],
       );
     }
@@ -919,7 +918,7 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
                 if (widget.gameMode == 'Cricket' || widget.gameMode == 'CutThroat') buildCricketTable(),
-                if (widget.gameMode == 'Shangai') buildShangaiTable(),
+                if (widget.gameMode == 'Shanghai') buildShanghaiTable(),
                 if (widget.gameMode == 'AroundClock') buildAroundClockTable(),
                 SizedBox(height: 16),
                 // Modern button arrangement
@@ -1119,12 +1118,12 @@ class _GamePageState extends State<GamePage> {
         ],
       );
     }
-    if (widget.gameMode == 'Shangai') {
-      final target = shangaiGame!.currentTarget;
-      final isBullRound = (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull');
+    if (widget.gameMode == 'Shanghai') {
+      final target = shanghaiGame!.currentTarget;
+      final isBullRound = (shanghaiGame!.mode == 'ShanghaiBull' && target == 'Bull');
       final targetLabel = target == 'Bull' ? 'Bull' : target.toString();
       List<String> buttons = [
-        'S$targetLabel', 'D$targetLabel', 'T$targetLabel', 'Shangai', 'Miss'
+        'S$targetLabel', 'D$targetLabel', 'T$targetLabel', 'Shanghai', 'Miss'
       ];
       return Column(
         children: [
@@ -1136,7 +1135,7 @@ class _GamePageState extends State<GamePage> {
             crossAxisSpacing: 12,
             childAspectRatio: 2.2,
             children: buttons.map((b) {
-              final isShangaiButton = b == 'Shangai';
+              final isShanghaiButton = b == 'Shanghai';
               return ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: b == 'Miss' ? Colors.redAccent : Colors.deepPurpleAccent,
@@ -1146,11 +1145,11 @@ class _GamePageState extends State<GamePage> {
                   textStyle: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.bold),
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                onPressed: shangaiGame!.currentTurn.length >= 3 || (isShangaiButton && isBullRound)
+                onPressed: shanghaiGame!.currentTurn.length >= 3 || (isShanghaiButton && isBullRound)
                     ? null
                     : () {
                         setState(() {
-                          shangaiGame!.currentTurn.add({'type': b});
+                          shanghaiGame!.currentTurn.add({'type': b});
                         });
                       },
                 child: Text(b),
@@ -1171,9 +1170,9 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
+                onPressed: shanghaiGame!.currentTurn.isNotEmpty ? () {
                   setState(() {
-                    shangaiGame!.currentTurn.removeLast();
+                    shanghaiGame!.currentTurn.removeLast();
                   });
                 } : null,
               ),
@@ -1188,17 +1187,17 @@ class _GamePageState extends State<GamePage> {
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   textStyle: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                onPressed: shangaiGame!.currentTurn.isNotEmpty ? () {
+                onPressed: shanghaiGame!.currentTurn.isNotEmpty ? () {
                   int score = 0;
-                  bool shangai = false;
+                  bool shanghai = false;
                   bool s = false, d = false, t = false;
-                  final target = shangaiGame!.currentTarget;
-                  for (var dart in shangaiGame!.currentTurn) {
+                  final target = shanghaiGame!.currentTarget;
+                  for (var dart in shanghaiGame!.currentTurn) {
                     String type = dart['type'];
                     if (type == 'Miss') continue;
-                    if (type == 'Shangai') {
-                      if (!(shangaiGame!.mode == 'ShangaiBull' && target == 'Bull')) {
-                        shangai = true;
+                    if (type == 'Shanghai') {
+                      if (!(shanghaiGame!.mode == 'ShanghaiBull' && target == 'Bull')) {
+                        shanghai = true;
                         s = d = t = true;
                         if (target == 'Bull') {
                           score = 50 + 75 + 25;
@@ -1212,24 +1211,24 @@ class _GamePageState extends State<GamePage> {
                     if (type.startsWith('D')) { score += target == 'Bull' ? 50 : (target is int ? 2 * target : 0); d = true; }
                     if (type.startsWith('T')) { score += target == 'Bull' ? 75 : (target is int ? 3 * target : 0); t = true; }
                   }
-                  bool isShangai = shangai || (s && d && t);
-                  if (shangaiGame!.mode == 'ShangaiBull' && target == 'Bull') isShangai = false;
-                  shangaiGame!.turns[currentPlayer].add({'turn': List.from(shangaiGame!.currentTurn), 'score': score, 'shangai': isShangai});
-                  shangaiGame!.currentTurn.clear();
-                  if (isShangai) {
+                  bool isShanghai = shanghai || (s && d && t);
+                  if (shanghaiGame!.mode == 'ShanghaiBull' && target == 'Bull') isShanghai = false;
+                  shanghaiGame!.turns[currentPlayer].add({'turn': List.from(shanghaiGame!.currentTurn), 'score': score, 'shanghai': isShanghai});
+                  shanghaiGame!.currentTurn.clear();
+                  if (isShanghai) {
                     _showWinnerDialog(widget.players[currentPlayer]);
                   } else {
                     if (currentPlayer == widget.players.length - 1) {
-                      if (shangaiGame!.currentRound == shangaiGame!.maxRound) {
+                      if (shanghaiGame!.currentRound == shanghaiGame!.maxRound) {
                         int maxScore = 0, winner = 0;
                         for (int i = 0; i < widget.players.length; i++) {
-                          int total = shangaiGame!.turns[i].fold(0, (a, b) => a + (((b['score'] ?? 0) as num).toInt()));
+                          int total = shanghaiGame!.turns[i].fold(0, (a, b) => a + (((b['score'] ?? 0) as num).toInt()));
                           if (total > maxScore) { maxScore = total; winner = i; }
                         }
                         _showWinnerDialog(widget.players[winner]);
                       } else {
                         setState(() {
-                          shangaiGame!.shangaiRound++;
+                          shanghaiGame!.shanghaiRound++;
                           currentPlayer = 0;
                         });
                       _handleShanghaiEndGame();
@@ -1244,7 +1243,7 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
           SizedBox(height: 8),
-          Text('Current turn: ${shangaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
+          Text('Current turn: ${shanghaiGame!.currentTurn.map((d) => d['type']).join(', ')}'),
         ],
       );
     }

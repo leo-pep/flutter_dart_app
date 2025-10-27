@@ -37,7 +37,7 @@
   "playerName": "Nom du joueur",
   "add": "Ajouter",
   "selectPlayers": "Sélectionnez les joueurs",
-  "noPlayersYet": "Aucun joueur pour l'instant. Ajoutez-en un !",
+  "noPlayersYet": "Aucun joueur pour l'instant. Ajoutez-en un ! 🥒",
   "noPlayersSelected": "Aucun joueur sélectionné.",
   "gameModeLabel": "Mode de jeu"
 }

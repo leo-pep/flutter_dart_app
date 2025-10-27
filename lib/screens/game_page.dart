@@ -317,7 +317,7 @@ class _GamePageState extends State<GamePage> {
         height: scorecardHeight,
         child: ListView.separated(
           itemCount: widget.players.length,
-          separatorBuilder: (_, __) => SizedBox(height: 16),
+          separatorBuilder: (_, _) => SizedBox(height: 16),
           itemBuilder: (context, i) {
             final avg = _average(i).toStringAsFixed(1);
             final isCurrent = i == currentPlayer;

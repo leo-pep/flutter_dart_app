@@ -263,7 +263,7 @@ class _StatsPageState extends State<StatsPage> {
               ),
               const SizedBox(height: 24),
               if (selectedPlayer == null)
-                Text(AppLocalizations.of(context)!.selectPlayer + '.', style: GoogleFonts.montserrat(fontSize: 18)),
+                Text('${AppLocalizations.of(context)!.selectPlayer}.', style: GoogleFonts.montserrat(fontSize: 18)),
               if (selectedPlayer != null && stats == null)
                 Text(AppLocalizations.of(context)!.noGamesFound, style: GoogleFonts.montserrat(fontSize: 18)),
               if (stats != null)

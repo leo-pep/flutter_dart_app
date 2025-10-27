@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dart_app/l10n/app_localizations.dart';
 import 'game_page.dart';
 import 'stats_page.dart';
 
@@ -192,18 +193,12 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Add Player',
-                style: GoogleFonts.montserrat(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(AppLocalizations.of(context)!.addPlayer, style: GoogleFonts.montserrat(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: _controller,
                 autofocus: true,
-                decoration: InputDecoration(hintText: 'Player name'),
+                decoration: InputDecoration(hintText: AppLocalizations.of(context)!.playerName),
                 style: GoogleFonts.montserrat(fontSize: 18),
                 onSubmitted: (_) {
                   _addPlayer(_controller.text.trim());
@@ -232,7 +227,7 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: Text('Add'),
+                  child: Text(AppLocalizations.of(context)!.add),
                 ),
               ),
             ],
@@ -260,7 +255,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.bar_chart),
-            tooltip: 'Player Stats',
+            tooltip: AppLocalizations.of(context)!.playerStats,
             onPressed: () {
               Navigator.push(
                 context,
@@ -416,13 +411,7 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Select Players:',
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
+                  Text(AppLocalizations.of(context)!.selectPlayers, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18)),
                   Expanded(
                     child: ListView.builder(
                       itemCount: allPlayers.length,
@@ -453,11 +442,8 @@ class _HomePageState extends State<HomePage> {
                   if (allPlayers.isEmpty)
                     Center(
                       child: Text(
-                        'No players yet. Add one!',
-                        style: GoogleFonts.montserrat(
-                          color: colorScheme.outline,
-                          fontSize: 18,
-                        ),
+                        AppLocalizations.of(context)!.noPlayersYet,
+                        style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
                       ),
                     ),
                 ],
@@ -467,11 +453,32 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: selectedPlayers.isEmpty
                   ? Center(
-                      child: Text(
-                        'No players selected.',
-                        style: GoogleFonts.montserrat(
-                          color: colorScheme.outline,
-                          fontSize: 18,
+                child: Text(
+                  AppLocalizations.of(context)!.noPlayersSelected,
+                  style: GoogleFonts.montserrat(color: colorScheme.outline, fontSize: 18),
+                ),
+              )
+                  : ListView.builder(
+                itemCount: selectedPlayers.length,
+                itemBuilder: (context, index) {
+                  final p = selectedPlayers[index];
+                  return AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23272F).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.7),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: colorScheme.primaryContainer,
+                          child: Text(p[0].toUpperCase(), style: GoogleFonts.montserrat(color: colorScheme.primary, fontWeight: FontWeight.bold)),
+                        ),
+                        title: Text(p, style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                          onPressed: () => _removePlayer(p),
+                          tooltip: AppLocalizations.of(context)!.remove,
                         ),
                       ),
                     )
@@ -536,10 +543,7 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddPlayerDialog,
         icon: Icon(Icons.person_add),
-        label: Text(
-          'Add Player',
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
-        ),
+        label: Text(AppLocalizations.of(context)!.addPlayer, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

@@ -24,7 +24,6 @@ class DartScoreboardApp extends StatelessWidget {
       supportedLocales: const [
         Locale('en'),
         Locale('fr'),
-        Locale('es'),
       ],
       localeResolutionCallback: (locale, supportedLocales) {
         if (locale == null) return const Locale('en');
